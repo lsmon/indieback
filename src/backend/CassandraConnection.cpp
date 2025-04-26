@@ -45,22 +45,16 @@ void CassandraConnection::executeQuery(const std::string &query)
     CassStatement* statement = cass_statement_new(query.c_str(), 0);
     CassFuture* query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
-
-    if (cass_future_error_code(query_future) == CASS_OK) {
-        const CassResult* result = cass_future_get_result(query_future);
-        const CassRow* row = cass_result_first_row(result);
-        const char* release_version;
-        size_t release_version_length;
-
-        if (row && cass_value_get_string(cass_row_get_column(row, 0), &release_version, &release_version_length) == CASS_OK) {
-            std::cout << "Cassandra version: " << std::string(release_version, release_version_length) << std::endl;
-        }
-
-        cass_result_free(result);
+    
+    if (cass_future_error_code(query_future) != CASS_OK) {
+        const char* message;
+        size_t message_length;
+        cass_future_error_message(query_future, &message, &message_length);
+        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        throw std::runtime_error("Query execution failed");
     } else {
-        std::cerr << "Query execution failed." << std::endl;
+        std::cout << "Query executed successfully." << std::endl;
     }
-
     cass_statement_free(statement);
     cass_future_free(query_future);
 }

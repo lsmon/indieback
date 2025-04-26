@@ -14,7 +14,7 @@ set(LOG_INC_UTIL
         include/util/Date.hpp
         include/util/LogUtil.hpp)
 
-set(LOG_INC 
+set(LOGPP_INC 
         ${LOG_INC_UTIL_FIO}
         ${LOG_INC_UTIL_LOGGING}
         ${LOG_INC_UTIL_PROPERTIES}
@@ -24,4 +24,4 @@ set(LOG_INC
 set(LOGPP_LIBRARY ${CMAKE_SOURCE_DIR}/lib/lib_logpp-0.9.2.5.a)
 
 message(STATUS "LOGPP_LIBRARY: ${LOGPP_LIBRARY}")
-message(STATUS "LOG_INC: ${LOG_INC}")
+message(STATUS "LOGPP_INC: ${LOGPP_INC}")

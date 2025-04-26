@@ -1,3 +1,6 @@
+#ifndef CASSANDRACONNECTION_HPP
+#define CASSANDRACONNECTION_HPP
+
 #include <cassandra.h>
 #include <string>
 
@@ -16,3 +19,5 @@ public:
 
     void executeQuery(const std::string& query);
 };
+
+#endif // CASSANDRACONNECTION_HPP

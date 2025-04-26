@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(indieback)
 
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(PROJECT_VERSION_MAJOR 0)
@@ -36,17 +36,43 @@ set(THIRD_PARTY_LIB
         ${CACHE_LIB}
         ${SCHEDULER_LIB})
 
-set(BACKEND_INC ${CMAKE_SOURCE_DIR}/include/backend/CassandraConnection.hpp)
-set(BACKEND_SRC ${CMAKE_SOURCE_DIR}/src/backend/CassandraConnection.cpp)
+set(INDIE_CASS_CONN_INC 
+        ${CMAKE_SOURCE_DIR}/include/backend/CassandraConnection.hpp)
+set(INDIE_CASS_CONN_SRC 
+        ${CMAKE_SOURCE_DIR}/src/backend/CassandraConnection.cpp)
+
+include(CTest)
+enable_testing()
+
+add_executable(test_${PROJECT_NAME}_cass_conn ${CMAKE_SOURCE_DIR}/test/TestCassConnection.cpp ${INDIE_CASS_CONN_INC} ${INDIE_CASS_CONN_SRC} ${CASSANDRA_INC})
+target_include_directories(test_${PROJECT_NAME}_cass_conn PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(test_${PROJECT_NAME}_cass_conn ${CASSANDRA_LIB})
+
+add_test(TEST_CASS_CONNECTION 
+        test_${PROJECT_NAME}_cass_conn)
+
+set(INDIE_MODELS_INC
+        ${CMAKE_SOURCE_DIR}/include/backend/IndieBackModels.hpp)
+set(INDIE_MODELS_SRC
+        ${CMAKE_SOURCE_DIR}/src/backend/IndieBackModels.cpp)
+
+
+add_executable(test_${PROJECT_NAME}_models ${CMAKE_SOURCE_DIR}/test/TestModels.cpp ${INDIE_MODELS_INC} ${INDIE_MODELS_SRC} ${JSON_INC} ${NETPP_INC} ${LOGPP_INC} ${CACHE_INC} ${SCHEDULER_INC})
+target_link_directories(test_${PROJECT_NAME}_models PUBLIC ${CMAKE_SOURCE_DIR}/lib)
+target_include_directories(test_${PROJECT_NAME}_models PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(test_${PROJECT_NAME}_models ${JSON_LIB} ${NETPP_LIB})
+add_test(TEST_MODELS 
+        test_${PROJECT_NAME}_models)
+
+
+        
+
+
+set(BACKEND_INC
+        ${INDIE_CASS_CONN_INC})
+set(BACKEND_SRC
+        ${INDIE_CASS_CONN_SRC})
 
 add_library(indieback ${BACKEND_SRC} ${BACKEND_INC} ${THIRD_PARTY_INC})
 target_include_directories(indieback PUBLIC ${CMAKE_SOURCE_DIR}/include)
 # target_link_libraries(indieback ${THIRD_PARTY_LIB})
-
-include(CTest)
-enable_testing()
-add_executable(indieback_cassandra_connection_test ${CMAKE_SOURCE_DIR}/test/TestCassConnection.cpp ${BACKEND_SRC} ${BACKEND_INC} ${CASSANDRA_INC})
-target_include_directories(indieback_cassandra_connection_test PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(indieback_cassandra_connection_test ${CASSANDRA_LIB})
-
-add_test(TEST_CASS_CONNECTION indieback_cassandra_connection_test)
