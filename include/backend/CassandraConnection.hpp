@@ -7,8 +7,11 @@
 class CassandraConnection {
 private:
     CassCluster* cluster;
-    CassSession* session;
     CassFuture* connect_future;
+    
+protected:
+    CassSession* session;
+    
 
 public:
     CassandraConnection(const std::string& contact_points, const std::string& username, const std::string& password);
