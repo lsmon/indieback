@@ -62,6 +62,7 @@ void testCassandraConnection() {
                 description TEXT,
                 created_at TIMESTAMP
             );)");
+        cassandra.executeQuery(createBandsTable);
 
         std::string createBandMembersTable(R"(
             CREATE TABLE IF NOT EXISTS indie_pub.band_members (
@@ -230,16 +231,45 @@ void testDailyTicketSalesCRUD() {
     std::cout << "Daily Ticket Sales JSON: " << dailyTicketSales->to_json() << std::endl;
 }
 
-void testInsertUser() {
-    std::string contact_points = "172.18.0.2";
-    std::string username = "cassandra";
-    std::string password = "cassandra";
-    std::string keyspace = "indiepub";
+std::string contact_points = "172.18.0.2";
+std::string username = "cassandra";
+std::string password = "cassandra";
+std::string keyspace = "indie_pub";
+
+void testInserts() {
     indiepub::IndieBackController controller(contact_points, username, password, keyspace);
 
-    std::unique_ptr<indiepub::User> user;
-    user = std::make_unique<indiepub::User>(UUID::random(), "abc@def.com", "fan", "John Doe", std::time(nullptr));
     controller.insertUser(*user);
+    controller.insertVenue(*venue);
+    controller.insertBand(*band);
+    controller.insertEvent(*event);
+    controller.insertTicket(*ticket);
+    controller.insertPost(*post);
+    controller.insertDailyTicketSales(*dailyTicketSales);
+
+    for (auto u : controller.getAllUsers()) {
+        std::cout << u.to_json() << std::endl;
+    }
+
+    for (auto v : controller.getAllVenues()) {
+        std::cout << v.to_json() << std::endl;
+    }
+    for (auto b : controller.getAllBands()) {
+        std::cout << b.to_json() << std::endl;
+    }
+    for (auto e : controller.getAllEvents()) {
+        std::cout << e.to_json() << std::endl;
+    }
+    for (auto t : controller.getAllTickets()) {
+        std::cout << t.to_json() << std::endl;
+    }
+    for (auto p : controller.getAllPosts()) {
+        std::cout << p.to_json() << std::endl;
+    }
+    for (auto s : controller.getAllDailyTicketSales()) {
+        std::cout << s.to_json() << std::endl;
+    }
+    std::cout << "All data inserted successfully!" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -259,7 +289,7 @@ int main(int argc, char* argv[]) {
         testPostCRUD();
         testBandMemberCRUD();
         testDailyTicketSalesCRUD();
-        testInsertUser();
+        testInserts();
     } else if (testType == "cassandra") {
         testCassandraConnection();
     } else if (testType == "models") {
@@ -271,9 +301,9 @@ int main(int argc, char* argv[]) {
         testPostCRUD();
         testBandMemberCRUD();
         testDailyTicketSalesCRUD();
-        testInsertUser();
+        testInserts();
     } else if (testType == "controller") {
-        testInsertUser();
+        testInserts();
     } else {
         std::cerr << "Unknown test type: " << testType << std::endl;
         return 1;

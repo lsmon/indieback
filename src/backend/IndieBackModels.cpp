@@ -61,8 +61,43 @@ indiepub::User indiepub::User::from_json(const std::string& json) {
     return user;
 }
 
-indiepub::Venue::Venue(const std::string& venue_id, const std::string& owner_id, const std::string& name,
-                        const std::string& location, int capacity, std::time_t created_at)
+indiepub::User indiepub::User::from_row(const CassRow *row)
+{
+    try {
+        if (row == nullptr) {
+            throw std::runtime_error("Row is null");
+        }
+        const char *user_id;
+        size_t user_id_length;
+        cass_value_get_string(cass_row_get_column(row, 0), &user_id, &user_id_length);
+    
+        const char *email;
+        size_t email_length;
+        cass_value_get_string(cass_row_get_column(row, 1), &email, &email_length);
+    
+        const char *role;
+        size_t role_length;
+        cass_value_get_string(cass_row_get_column(row, 2), &role, &role_length);
+    
+        const char *name;
+        size_t name_length;
+        cass_value_get_string(cass_row_get_column(row, 3), &name, &name_length);
+    
+        cass_int64_t created_at;
+        cass_value_get_int64(cass_row_get_column(row, 4), &created_at);
+        return User(std::string(user_id, user_id_length),
+                            std::string(email, email_length),
+                            std::string(role, role_length),
+                            std::string(name, name_length),
+                            created_at);
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return User();
+    }
+}
+
+indiepub::Venue::Venue(const std::string &venue_id, const std::string &owner_id, const std::string &name,
+                       const std::string &location, int capacity, std::time_t created_at)
     : venue_id_(venue_id), owner_id_(owner_id), name_(name), location_(location),
       capacity_(capacity), created_at_(created_at) {}
 
@@ -113,6 +148,45 @@ indiepub::Venue indiepub::Venue::from_json(const std::string& json) {
     return venue;
 }
 
+indiepub::Venue indiepub::Venue::from_row(const CassRow *row) {
+    try {
+        if (row == nullptr) {
+            throw std::runtime_error("Row is null");
+        }
+        const char *venue_id;
+        size_t venue_id_length;
+        cass_value_get_string(cass_row_get_column(row, 0), &venue_id, &venue_id_length);
+    
+        const char *owner_id;
+        size_t owner_id_length;
+        cass_value_get_string(cass_row_get_column(row, 1), &owner_id, &owner_id_length);
+    
+        const char *name;
+        size_t name_length;
+        cass_value_get_string(cass_row_get_column(row, 2), &name, &name_length);
+    
+        const char *location;
+        size_t location_length;
+        cass_value_get_string(cass_row_get_column(row, 3), &location, &location_length);
+    
+        int capacity;
+        cass_value_get_int32(cass_row_get_column(row, 4), &capacity);
+    
+        cass_int64_t created_at;
+        cass_value_get_int64(cass_row_get_column(row, 5), &created_at);
+    
+        return Venue(std::string(venue_id, venue_id_length),
+                     std::string(owner_id, owner_id_length),
+                     std::string(name, name_length),
+                     std::string(location, location_length),
+                     capacity,
+                     created_at);
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return Venue();
+    }
+}
+
 indiepub::Band::Band(const std::string& band_id, const std::string& name,
                       const std::string& genre, const std::string& description, std::time_t created_at)
     : band_id_(band_id), name_(name), genre_(genre),
@@ -159,6 +233,41 @@ indiepub::Band indiepub::Band::from_json(const std::string& json) {
     return band;
 }
 
+indiepub::Band indiepub::Band::from_row(const CassRow *row) {
+    try {
+        if (row == nullptr) {
+            throw std::runtime_error("Row is null");
+        }
+        const char *band_id;
+        size_t band_id_length;
+        cass_value_get_string(cass_row_get_column(row, 0), &band_id, &band_id_length);
+    
+        const char *name;
+        size_t name_length;
+        cass_value_get_string(cass_row_get_column(row, 1), &name, &name_length);
+    
+        const char *genre;
+        size_t genre_length;
+        cass_value_get_string(cass_row_get_column(row, 2), &genre, &genre_length);
+    
+        const char *description;
+        size_t description_length;
+        cass_value_get_string(cass_row_get_column(row, 3), &description, &description_length);
+    
+        cass_int64_t created_at;
+        cass_value_get_int64(cass_row_get_column(row, 4), &created_at);
+    
+        return Band(std::string(band_id, band_id_length),
+                    std::string(name, name_length),
+                    std::string(genre, genre_length),
+                    std::string(description, description_length),
+                    created_at);
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return Band();
+    }
+}
+
 indiepub::BandMember::BandMember(const std::string& band_id, const std::string& user_id)
     : band_id_(band_id), user_id_(user_id) {}
 
@@ -183,6 +292,27 @@ indiepub::BandMember indiepub::BandMember::from_json(const std::string& json) {
     member.band_id_ = jsonObject->get("band_id").str();
     member.user_id_ = jsonObject->get("user_id").str();
     return member;
+}
+
+indiepub::BandMember indiepub::BandMember::from_row(const CassRow *row) {
+    try {
+        if (row == nullptr) {
+            throw std::runtime_error("Row is null");
+        }
+        const char *band_id;
+        size_t band_id_length;
+        cass_value_get_string(cass_row_get_column(row, 0), &band_id, &band_id_length);
+    
+        const char *user_id;
+        size_t user_id_length;
+        cass_value_get_string(cass_row_get_column(row, 1), &user_id, &user_id_length);
+    
+        return BandMember(std::string(band_id, band_id_length),
+                          std::string(user_id, user_id_length));
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return BandMember();
+    }
 }
 
 indiepub::Event::Event(const std::string& event_id, const std::string& venue_id,
@@ -258,6 +388,58 @@ indiepub::Event indiepub::Event::from_json(const std::string& json) {
     return event;
 }
 
+indiepub::Event indiepub::Event::from_row(const CassRow *row) {
+    try {
+        if (row == nullptr) {
+            throw std::runtime_error("Row is null");
+        }
+        const char *event_id;
+        size_t event_id_length;
+        cass_value_get_string(cass_row_get_column(row, 0), &event_id, &event_id_length);
+    
+        const char *venue_id;
+        size_t venue_id_length;
+        cass_value_get_string(cass_row_get_column(row, 1), &venue_id, &venue_id_length);
+    
+        const char *band_id;
+        size_t band_id_length;
+        cass_value_get_string(cass_row_get_column(row, 2), &band_id, &band_id_length);
+    
+        const char *creator_id;
+        size_t creator_id_length;
+        cass_value_get_string(cass_row_get_column(row, 3), &creator_id, &creator_id_length);
+    
+        const char *name;
+        size_t name_length;
+        cass_value_get_string(cass_row_get_column(row, 4), &name, &name_length);
+    
+        cass_int64_t date;
+        cass_value_get_int64(cass_row_get_column(row, 5), &date);
+    
+        double price;
+        cass_value_get_double(cass_row_get_column(row, 6), &price);
+    
+        int capacity;
+        cass_value_get_int32(cass_row_get_column(row, 7), &capacity);
+    
+        int sold;
+        cass_value_get_int32(cass_row_get_column(row, 8), &sold);
+    
+        return Event(std::string(event_id, event_id_length),
+                     std::string(venue_id, venue_id_length),
+                     std::string(band_id, band_id_length),
+                     std::string(creator_id, creator_id_length),
+                     std::string(name, name_length),
+                     date,
+                     price,
+                     capacity,
+                     sold);
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return Event();
+    }
+}
+
 indiepub::Ticket::Ticket(const std::string& ticket_id, const std::string& user_id,
                             const std::string& event_id, std::time_t purchase_date)
     : ticket_id_(ticket_id), user_id_(user_id), event_id_(event_id),
@@ -296,6 +478,36 @@ indiepub::Ticket indiepub::Ticket::from_json(const std::string& json) {
     ticket.event_id_ = jsonObject->get("event_id").str();
     ticket.purchase_date_ = string_to_timestamp(jsonObject->get("purchase_date").str());
     return ticket;
+}
+
+indiepub::Ticket indiepub::Ticket::from_row(const CassRow *row) {
+    try {
+        if (row == nullptr) {
+            throw std::runtime_error("Row is null");
+        }
+        const char *ticket_id;
+        size_t ticket_id_length;
+        cass_value_get_string(cass_row_get_column(row, 0), &ticket_id, &ticket_id_length);
+    
+        const char *user_id;
+        size_t user_id_length;
+        cass_value_get_string(cass_row_get_column(row, 1), &user_id, &user_id_length);
+    
+        const char *event_id;
+        size_t event_id_length;
+        cass_value_get_string(cass_row_get_column(row, 2), &event_id, &event_id_length);
+    
+        cass_int64_t purchase_date;
+        cass_value_get_int64(cass_row_get_column(row, 3), &purchase_date);
+    
+        return Ticket(std::string(ticket_id, ticket_id_length),
+                      std::string(user_id, user_id_length),
+                      std::string(event_id, event_id_length),
+                      purchase_date);
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return Ticket();
+    }
 }
 
 indiepub::Post::Post(const std::string& post_id, const std::string& user_id,
@@ -344,6 +556,41 @@ indiepub::Post indiepub::Post::from_json(const std::string& json) {
     return post;
 }
 
+indiepub::Post indiepub::Post::from_row(const CassRow *row) {
+    try {
+        if (row == nullptr) {
+            throw std::runtime_error("Row is null");
+        }
+        const char *post_id;
+        size_t post_id_length;
+        cass_value_get_string(cass_row_get_column(row, 0), &post_id, &post_id_length);
+    
+        const char *user_id;
+        size_t user_id_length;
+        cass_value_get_string(cass_row_get_column(row, 1), &user_id, &user_id_length);
+    
+        const char *content;
+        size_t content_length;
+        cass_value_get_string(cass_row_get_column(row, 2), &content, &content_length);
+    
+        cass_int64_t created_at;
+        cass_value_get_int64(cass_row_get_column(row, 3), &created_at);
+    
+        const char *date;
+        size_t date_length;
+        cass_value_get_string(cass_row_get_column(row, 4), &date, &date_length);
+    
+        return Post(std::string(post_id, post_id_length),
+                    std::string(user_id, user_id_length),
+                    std::string(content, content_length),
+                    created_at,
+                    std::string(date, date_length));
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return Post();
+    }
+}
+
 indiepub::DailyTicketSales::DailyTicketSales(const std::string& event_id, const std::string& sale_date, int tickets_sold)
     : event_id_(event_id), sale_date_(sale_date), tickets_sold_(tickets_sold) {}
 
@@ -374,4 +621,29 @@ indiepub::DailyTicketSales indiepub::DailyTicketSales::from_json(const std::stri
     sales.sale_date_ = jsonObject->get("sale_date").str();
     sales.tickets_sold_ = std::stoi(jsonObject->get("tickets_sold").str());
     return sales;
+}
+
+indiepub::DailyTicketSales indiepub::DailyTicketSales::from_row(const CassRow *row) {
+    try {
+        if (row == nullptr) {
+            throw std::runtime_error("Row is null");
+        }
+        const char *event_id;
+        size_t event_id_length;
+        cass_value_get_string(cass_row_get_column(row, 0), &event_id, &event_id_length);
+    
+        const char *sale_date;
+        size_t sale_date_length;
+        cass_value_get_string(cass_row_get_column(row, 1), &sale_date, &sale_date_length);
+    
+        int tickets_sold;
+        cass_value_get_int32(cass_row_get_column(row, 2), &tickets_sold);
+    
+        return DailyTicketSales(std::string(event_id, event_id_length),
+                                std::string(sale_date, sale_date_length),
+                                tickets_sold);
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return DailyTicketSales();
+    }
 }

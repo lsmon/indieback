@@ -5,6 +5,7 @@
 #include <vector>
 #include <optional>
 #include <ctime>
+#include <cassandra.h>
 
 namespace indiepub {
 
@@ -32,6 +33,8 @@ namespace indiepub {
         std::string to_json() const;
 
         static User from_json(const std::string& json);
+
+        static User from_row(const CassRow *row);
 
     private:
         std::string user_id_;  // UUID
@@ -61,6 +64,8 @@ namespace indiepub {
 
         static Venue from_json(const std::string& json);
 
+        static Venue from_row(const CassRow *row);
+
     private:
         std::string venue_id_;  // UUID
         std::string owner_id_;  // UUID (links to User)
@@ -88,6 +93,7 @@ namespace indiepub {
         std::string to_json() const;
 
         static Band from_json(const std::string& json);
+        static Band from_row(const CassRow *row);
 
     private:
         std::string band_id_;  // UUID
@@ -111,6 +117,7 @@ namespace indiepub {
         std::string to_json() const;
 
         static BandMember from_json(const std::string& json);
+        static BandMember from_row(const CassRow *row);
 
     private:
         std::string band_id_;  // UUID
@@ -140,6 +147,7 @@ namespace indiepub {
         std::string to_json() const;
 
         static Event from_json(const std::string& json);
+        static Event from_row(const CassRow *row);
 
     private:
         std::string event_id_;    // UUID
@@ -170,6 +178,7 @@ namespace indiepub {
         std::string to_json() const;
 
         static Ticket from_json(const std::string& json);
+        static Ticket from_row(const CassRow *row);
 
     private:
         std::string ticket_id_;      // UUID
@@ -196,6 +205,7 @@ namespace indiepub {
         std::string to_json() const;
 
         static Post from_json(const std::string& json);
+        static Post from_row(const CassRow *row);
 
     private:
         std::string post_id_;    // UUID
@@ -220,7 +230,8 @@ namespace indiepub {
         std::string to_json() const;
 
         static DailyTicketSales from_json(const std::string& json);
-
+        static DailyTicketSales from_row(const CassRow *row);
+        
     private:
         std::string event_id_;      // UUID
         std::string sale_date_;     // YYYY-MM-DD

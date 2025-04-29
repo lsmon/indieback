@@ -17,13 +17,13 @@ namespace indiepub {
         // ~IndieBackController() = default;
 
         void insertUser(const indiepub::User& user);
-        /* void insertVenue(const indiepub::Venue& venue);
+        void insertVenue(const indiepub::Venue& venue);
         void insertBand(const indiepub::Band& band);
         void insertEvent(const indiepub::Event& event);
         void insertTicket(const indiepub::Ticket& ticket);
         void insertPost(const indiepub::Post& post);
         void insertDailyTicketSales(const indiepub::DailyTicketSales& sales);
-
+ 
         std::vector<indiepub::User> getAllUsers();
         std::vector<indiepub::Venue> getAllVenues();
         std::vector<indiepub::Band> getAllBands();
@@ -31,7 +31,7 @@ namespace indiepub {
         std::vector<indiepub::Ticket> getAllTickets();
         std::vector<indiepub::Post> getAllPosts();
         std::vector<indiepub::DailyTicketSales> getAllDailyTicketSales();
-    
+/*    
         indiepub::User getUserById(const std::string& user_id);
         indiepub::Venue getVenueById(const std::string& venue_id);
         indiepub::Band getBandById(const std::string& band_id);
