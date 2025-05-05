@@ -33,27 +33,7 @@ namespace indiepub {
     
 
     // 8. Daily Ticket Sales
-    class DailyTicketSales {
-    public:
-        DailyTicketSales() = default;
-        DailyTicketSales(const std::string& event_id, const std::string& sale_date, int tickets_sold);
-
-        // Getters
-        std::string event_id() const;
-        std::string sale_date() const; // YYYY-MM-DD
-        int tickets_sold() const;
-
-        // JSON serialization
-        std::string to_json() const;
-
-        static DailyTicketSales from_json(const std::string& json);
-        static DailyTicketSales from_row(const CassRow *row);
-        
-    private:
-        std::string event_id_;      // UUID
-        std::string sale_date_;     // YYYY-MM-DD
-        int tickets_sold_;          // Counter
-    };
+    
 
 } // namespace indiepub
 
