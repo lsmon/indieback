@@ -31,14 +31,17 @@ namespace indiepub {
         std::vector<indiepub::Ticket> getAllTickets();
         std::vector<indiepub::Post> getAllPosts();
         std::vector<indiepub::DailyTicketSales> getAllDailyTicketSales();
-/*    
+    
         indiepub::User getUserById(const std::string& user_id);
+        indiepub::User getUserBy(const std::string& email);
         indiepub::Venue getVenueById(const std::string& venue_id);
+        indiepub::Venue getVenueBy(const std::string& name, const std::string& location);
         indiepub::Band getBandById(const std::string& band_id);
+        indiepub::Band getBandBy(const std::string& name, const std::string& genre);
         indiepub::Event getEventById(const std::string& event_id);
         indiepub::Ticket getTicketById(const std::string& ticket_id);
         indiepub::Post getPostById(const std::string& post_id);
-
+/*
         indiepub::DailyTicketSales getDailyTicketSalesById(const std::string& event_id, const std::string& sale_date);
         std::vector<indiepub::Post> getPostsByUserId(const std::string& user_id);
         std::vector<indiepub::Ticket> getTicketsByUserId(const std::string& user_id);

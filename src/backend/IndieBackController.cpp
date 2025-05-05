@@ -441,3 +441,170 @@ std::vector<indiepub::DailyTicketSales> indiepub::IndieBackController::getAllDai
         throw std::runtime_error("Failed to execute query");
     }
 }
+
+indiepub::User indiepub::IndieBackController::getUserById(const std::string &user_id)
+{
+    std::string query = "SELECT * FROM " + keyspace_ + ".users WHERE user_id = ?";
+    CassStatement *statement = cass_statement_new(query.c_str(), 1);
+    CassUuid uuid;
+    if (cass_uuid_from_string(user_id.c_str(), &uuid) != CASS_OK) {
+        throw std::runtime_error("Invalid UUID string: " + user_id);
+    }
+    cass_statement_bind_uuid(statement, 0, uuid);
+    CassFuture *query_future = cass_session_execute(session, statement);
+    cass_future_wait(query_future);
+    const CassResult *result = nullptr;
+    if (cass_future_error_code(query_future) == CASS_OK) {
+        result = cass_future_get_result(query_future);
+        if (cass_result_row_count(result) > 0) {
+            const CassRow *row = cass_iterator_get_row(cass_iterator_from_result(result));
+            return indiepub::User::from_row(row);
+        } else {
+            throw std::runtime_error("User not found");
+        }
+    } else {
+        throw std::runtime_error("Failed to execute query");
+    }
+    cass_statement_free(statement);
+    if (query_future != nullptr) {
+        cass_future_free(query_future);
+    }
+    if (result != nullptr) { 
+        cass_result_free(result);
+        cass_iterator_free(cass_iterator_from_result(result));
+    }
+    throw std::runtime_error("User not found");
+}
+
+indiepub::User indiepub::IndieBackController::getUserBy(const std::string &email)
+{
+    std::string query = "SELECT * FROM " + keyspace_ + ".users WHERE email = ? ALLOW FILTERING";
+    CassStatement *statement = cass_statement_new(query.c_str(), 1);
+    cass_statement_bind_string(statement, 0, email.c_str());
+    CassFuture *query_future = cass_session_execute(session, statement);
+    cass_future_wait(query_future);
+    const CassResult *result = nullptr;
+    if (cass_future_error_code(query_future) == CASS_OK) {
+        result = cass_future_get_result(query_future);
+        if (cass_result_row_count(result) > 0) {
+            const CassRow *row = cass_iterator_get_row(cass_iterator_from_result(result));
+            return indiepub::User::from_row(row);
+        } else {
+            throw std::runtime_error("User not found");
+        }
+    } else {
+        throw std::runtime_error("Failed to execute query");
+    }
+    cass_statement_free(statement);
+    if (query_future != nullptr) {
+        cass_future_free(query_future);
+    }
+    if (result != nullptr) { 
+        cass_result_free(result);
+        cass_iterator_free(cass_iterator_from_result(result));
+    }
+    // If we reach here, it means the user was not found
+    throw std::runtime_error("User not found");
+}
+
+indiepub::Venue indiepub::IndieBackController::getVenueById(const std::string &venue_id)
+{
+    std::string query = "SELECT * FROM " + keyspace_ + ".venues WHERE venue_id = ?";
+    CassStatement *statement = cass_statement_new(query.c_str(), 1);
+    CassUuid uuid;
+    if (cass_uuid_from_string(venue_id.c_str(), &uuid) != CASS_OK) {
+        throw std::runtime_error("Invalid UUID string: " + venue_id);
+    }
+    cass_statement_bind_uuid(statement, 0, uuid);
+    CassFuture *query_future = cass_session_execute(session, statement);
+    cass_future_wait(query_future);
+    const CassResult *result = nullptr;
+    if (cass_future_error_code(query_future) == CASS_OK) {
+        result = cass_future_get_result(query_future);
+        if (cass_result_row_count(result) > 0) {
+            const CassRow *row = cass_iterator_get_row(cass_iterator_from_result(result));
+            return indiepub::Venue::from_row(row);
+        } else {
+            throw std::runtime_error("Venue not found");
+        }
+    } else {
+        throw std::runtime_error("Failed to execute query");
+    }
+    cass_statement_free(statement);
+    if (query_future != nullptr) {
+        cass_future_free(query_future);
+    }
+    if (result != nullptr) { 
+        cass_result_free(result);
+        cass_iterator_free(cass_iterator_from_result(result));
+    }
+    // If we reach here, it means the venue was not found
+    throw std::runtime_error("Venue not found");
+}
+
+indiepub::Venue indiepub::IndieBackController::getVenueBy(const std::string &name, const std::string &location)
+{
+    std::string query = "SELECT * FROM " + keyspace_ + ".venues WHERE name = ? AND location = ? ALLOW FILTERING";
+    CassStatement *statement = cass_statement_new(query.c_str(), 2);
+    cass_statement_bind_string(statement, 0, name.c_str());
+    cass_statement_bind_string(statement, 1, location.c_str());
+    CassFuture *query_future = cass_session_execute(session, statement);
+    cass_future_wait(query_future);
+    const CassResult *result = nullptr;
+    if (cass_future_error_code(query_future) == CASS_OK) {
+        result = cass_future_get_result(query_future);
+        if (cass_result_row_count(result) > 0) {
+            const CassRow *row = cass_iterator_get_row(cass_iterator_from_result(result));
+            return indiepub::Venue::from_row(row);
+        } else {
+            throw std::runtime_error("Venue not found");
+        }
+    } else {
+        throw std::runtime_error("Failed to execute query");
+    }
+    cass_statement_free(statement);
+    if (query_future != nullptr) {
+        cass_future_free(query_future);
+    }
+    if (result != nullptr) { 
+        cass_result_free(result);
+        cass_iterator_free(cass_iterator_from_result(result));
+    }
+    // If we reach here, it means the venue was not found
+    throw std::runtime_error("Venue not found");
+}
+
+indiepub::Band indiepub::IndieBackController::getBandById(const std::string &band_id)
+{
+    std::string query = "SELECT * FROM " + keyspace_ + ".bands WHERE band_id = ?";
+    CassStatement *statement = cass_statement_new(query.c_str(), 1);
+    CassUuid uuid;
+    if (cass_uuid_from_string(band_id.c_str(), &uuid) != CASS_OK) {
+        throw std::runtime_error("Invalid UUID string: " + band_id);
+    }
+    cass_statement_bind_uuid(statement, 0, uuid);
+    CassFuture *query_future = cass_session_execute(session, statement);
+    cass_future_wait(query_future);
+    const CassResult *result = nullptr;
+    if (cass_future_error_code(query_future) == CASS_OK) {
+        result = cass_future_get_result(query_future);
+        if (cass_result_row_count(result) > 0) {
+            const CassRow *row = cass_iterator_get_row(cass_iterator_from_result(result));
+            return indiepub::Band::from_row(row);
+        } else {
+            throw std::runtime_error("Band not found");
+        }
+    } else {
+        throw std::runtime_error("Failed to execute query");
+    }
+    cass_statement_free(statement);
+    if (query_future != nullptr) {
+        cass_future_free(query_future);
+    }
+    if (result != nullptr) { 
+        cass_result_free(result);
+        cass_iterator_free(cass_iterator_from_result(result));
+    }
+    // If we reach here, it means the band was not found
+    throw std::runtime_error("Band not found");
+}

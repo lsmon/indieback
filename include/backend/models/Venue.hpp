@@ -1,0 +1,45 @@
+#ifndef INDIEPUB_VENUE_HPP
+#define INDIEPUB_VENUE_HPP
+
+#include <string>
+#include <vector>
+#include <optional>
+#include <ctime>
+#include <cassandra.h>
+
+namespace indiepub
+{
+
+    class Venue
+    {
+    public:
+        Venue() = default;
+        Venue(const std::string &venue_id, const std::string &owner_id, const std::string &name,
+              const std::string &location, int capacity, std::time_t created_at);
+
+        // Getters
+        std::string venue_id() const;
+        std::string owner_id() const;
+        std::string name() const;
+        std::string location() const;
+        int capacity() const;
+        std::time_t created_at() const;
+
+        // JSON serialization
+        std::string to_json() const;
+
+        static Venue from_json(const std::string &json);
+
+        static Venue from_row(const CassRow *row);
+
+    private:
+        std::string venue_id_; // UUID
+        std::string owner_id_; // UUID (links to User)
+        std::string name_;
+        std::string location_;
+        int capacity_;
+        std::time_t created_at_;
+    };
+}
+
+#endif // INDIEPUB_VENUE_HPP
