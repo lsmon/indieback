@@ -15,26 +15,6 @@ namespace indiepub {
     // Helper function to parse ISO 8601 string to timestamp
     std::time_t string_to_timestamp(const std::string& str);
 
-    
-    // 2. Venues
-    
-
-    // 3. Bands
-    
-
-    // 4. Band Members
-    
-    // 5. Event (used for both events_by_venue and events_by_band)
-
-    // 6. Ticket (used for both tickets_by_user and tickets_by_event)
-    
-
-    // 7. Post
-    
-
-    // 8. Daily Ticket Sales
-    
-
 } // namespace indiepub
 
 #endif // INDIEPUB_MODELS_HPP

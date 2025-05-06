@@ -16,6 +16,10 @@ namespace indiepub
         Band(const std::string &band_id, const std::string &name, const std::string &genre,
              const std::string &description, std::time_t created_at);
 
+        static const std::string COLUMN_FAMILY;
+        static const std::string IDX_BANDS_NAME;
+        static const std::string IDX_BANDS_GENRE;
+        
         // Getters
         std::string band_id() const;
         std::string name() const;

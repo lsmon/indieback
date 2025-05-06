@@ -15,6 +15,8 @@ namespace indiepub
         DailyTicketSales() = default;
         DailyTicketSales(const std::string &event_id, const std::string &sale_date, int tickets_sold);
 
+        static const std::string COLUMN_FAMILY;
+
         // Getters
         std::string event_id() const;
         std::string sale_date() const; // YYYY-MM-DD

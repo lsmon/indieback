@@ -4,6 +4,12 @@
 #include <string>
 #include <memory>
 
+
+const std::string indiepub::Venue::COLUMN_FAMILY = "venues";
+const std::string indiepub::Venue::IDX_VENUES_NAME = "name";
+const std::string indiepub::Venue::IDX_OWNERS_ID = "owner_id";
+const std::string indiepub::Venue::IDX_VENUES_LOCATION = "location";
+
 indiepub::Venue::Venue(const std::string &venue_id, const std::string &owner_id, const std::string &name,
                        const std::string &location, int capacity, std::time_t created_at)
     : venue_id_(venue_id), owner_id_(owner_id), name_(name), location_(location),

@@ -1,5 +1,5 @@
-#ifndef INDIEPUB_POST_HPP
-#define INDIEPUB_POST_HPP
+#ifndef INDIEPUB_POSTS_BY_DATE_HPP
+#define INDIEPUB_POSTS_BY_DATE_HPP
 
 #include <string>
 #include <vector>
@@ -9,13 +9,17 @@
 
 namespace indiepub
 {
-    class Post
+    class PostsByDate
     {
     public:
-        Post() = default;
-        Post(const std::string &post_id, const std::string &user_id, const std::string &content,
+        PostsByDate() = default;
+        PostsByDate(const std::string &post_id, const std::string &user_id, const std::string &content,
              std::time_t created_at, const std::string &date);
 
+        static const std::string COLUMN_FAMILY;
+        static const std::string IDX_POSTS_USER_ID;
+        static const std::string IDX_POSTS_CONTENT;
+        
         // Getters
         std::string post_id() const;
         std::string user_id() const;
@@ -26,8 +30,8 @@ namespace indiepub
         // JSON serialization
         std::string to_json() const;
 
-        static Post from_json(const std::string &json);
-        static Post from_row(const CassRow *row);
+        static PostsByDate from_json(const std::string &json);
+        static PostsByDate from_row(const CassRow *row);
 
     private:
         std::string post_id_; // UUID
@@ -38,4 +42,4 @@ namespace indiepub
     };
 }
 
-#endif // INDIEPUB_POST_HPP
+#endif // INDIEPUB_POSTS_BY_DATE_HPP

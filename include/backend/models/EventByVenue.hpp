@@ -1,5 +1,5 @@
-#ifndef INDIEPUB_EVENT_HPP
-#define INDIEPUB_EVENT_HPP
+#ifndef INDIEPUB_EVENT_BY_VENUE_HPP
+#define INDIEPUB_EVENT_BY_VENUE_HPP
 
 #include <string>
 #include <vector>
@@ -9,14 +9,23 @@
 
 namespace indiepub
 {
-    class Event
+    class EventByVenue
     {
     public:
-        Event() = default;
-        Event(const std::string &event_id, const std::string &venue_id, const std::string &band_id,
+        EventByVenue() = default;
+        EventByVenue(const std::string &event_id, const std::string &venue_id, const std::string &band_id,
               const std::string &creator_id, const std::string &name, std::time_t date,
               double price, int capacity, int sold);
 
+        static const std::string COLUMN_FAMILY;
+        
+        static const std::string IDX_EVENTS_BAND_ID;
+        static const std::string IDX_EVENTS_CAPACITY;
+        static const std::string IDX_EVENTS_CREATOR_ID;
+        static const std::string IDX_EVENTS_NAME;
+        static const std::string IDX_EVENTS_PRICE;
+        static const std::string IDX_EVENTS_SOLD;
+        
         // Getters
         std::string event_id() const;
         std::string venue_id() const;
@@ -31,8 +40,8 @@ namespace indiepub
         // JSON serialization
         std::string to_json() const;
 
-        static Event from_json(const std::string &json);
-        static Event from_row(const CassRow *row);
+        static EventByVenue from_json(const std::string &json);
+        static EventByVenue from_row(const CassRow *row);
 
     private:
         std::string event_id_;   // UUID
@@ -47,4 +56,4 @@ namespace indiepub
     };
 }
 
-#endif // INDIEPUB_EVENT_HPP
+#endif // INDIEPUB_EVENT_BY_VENUE_HPP

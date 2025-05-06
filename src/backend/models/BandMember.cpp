@@ -4,6 +4,8 @@
 #include <string>
 #include <memory>
 
+const std::string indiepub::BandMember::COLUMN_FAMILY = "band_members";
+
 indiepub::BandMember::BandMember(const std::string &band_id, const std::string &user_id)
     : band_id_(band_id), user_id_(user_id) {}
 

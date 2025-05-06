@@ -16,7 +16,11 @@ namespace indiepub
         Venue() = default;
         Venue(const std::string &venue_id, const std::string &owner_id, const std::string &name,
               const std::string &location, int capacity, std::time_t created_at);
-
+        
+        static const std::string COLUMN_FAMILY;
+        static const std::string IDX_VENUES_NAME;
+        static const std::string IDX_OWNERS_ID;
+        static const std::string IDX_VENUES_LOCATION;
         // Getters
         std::string venue_id() const;
         std::string owner_id() const;

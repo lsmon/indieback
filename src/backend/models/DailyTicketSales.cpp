@@ -5,6 +5,8 @@
 #include <string>
 #include <memory>
 
+const std::string indiepub::DailyTicketSales::COLUMN_FAMILY = "daily_ticket_sales";
+
 indiepub::DailyTicketSales::DailyTicketSales(const std::string& event_id, const std::string& sale_date, int tickets_sold)
     : event_id_(event_id), sale_date_(sale_date), tickets_sold_(tickets_sold) {}
 

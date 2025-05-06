@@ -4,6 +4,10 @@
 #include <string>
 #include <memory>
 
+const std::string indiepub::Band::COLUMN_FAMILY = "bands";
+const std::string indiepub::Band::IDX_BANDS_NAME = "name";
+const std::string indiepub::Band::IDX_BANDS_GENRE = "genre";
+
 indiepub::Band::Band(const std::string &band_id, const std::string &name,
                      const std::string &genre, const std::string &description, std::time_t created_at)
     : band_id_(band_id), name_(name), genre_(genre),

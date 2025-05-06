@@ -1,40 +1,44 @@
-#include <backend/models/Post.hpp>
+#include <backend/models/PostsByDate.hpp>
 #include <backend/IndieBackModels.hpp>
 #include <JSON.hpp>
 #include <string>
 #include <memory>
 
-indiepub::Post::Post(const std::string &post_id, const std::string &user_id,
+const std::string indiepub::PostsByDate::COLUMN_FAMILY = "posts_by_date";
+const std::string indiepub::PostsByDate::IDX_POSTS_USER_ID = "user_id";
+const std::string indiepub::PostsByDate::IDX_POSTS_CONTENT = "content";
+
+indiepub::PostsByDate::PostsByDate(const std::string &post_id, const std::string &user_id,
                      const std::string &content, std::time_t created_at, const std::string &date)
     : post_id_(post_id), user_id_(user_id), content_(content),
       created_at_(created_at), date_(date) {}
 
-std::string indiepub::Post::post_id() const
+std::string indiepub::PostsByDate::post_id() const
 {
     return post_id_;
 }
 
-std::string indiepub::Post::user_id() const
+std::string indiepub::PostsByDate::user_id() const
 {
     return user_id_;
 }
 
-std::string indiepub::Post::content() const
+std::string indiepub::PostsByDate::content() const
 {
     return content_;
 }
 
-std::time_t indiepub::Post::created_at() const
+std::time_t indiepub::PostsByDate::created_at() const
 {
     return created_at_;
 }
 
-std::string indiepub::Post::date() const
+std::string indiepub::PostsByDate::date() const
 {
     return date_;
 }
 
-std::string indiepub::Post::to_json() const
+std::string indiepub::PostsByDate::to_json() const
 {
     std::unique_ptr<JSONObject> json = std::make_unique<JSONObject>();
     json->put("post_id", post_id_);
@@ -45,9 +49,9 @@ std::string indiepub::Post::to_json() const
     return json->str();
 }
 
-indiepub::Post indiepub::Post::from_json(const std::string &json)
+indiepub::PostsByDate indiepub::PostsByDate::from_json(const std::string &json)
 {
-    Post post;
+    PostsByDate post;
     std::unique_ptr<JSONObject> jsonObject = std::make_unique<JSONObject>(json);
     post.post_id_ = jsonObject->get("post_id").str();
     post.user_id_ = jsonObject->get("user_id").str();
@@ -57,7 +61,7 @@ indiepub::Post indiepub::Post::from_json(const std::string &json)
     return post;
 }
 
-indiepub::Post indiepub::Post::from_row(const CassRow *row)
+indiepub::PostsByDate indiepub::PostsByDate::from_row(const CassRow *row)
 {
     try
     {
@@ -84,7 +88,7 @@ indiepub::Post indiepub::Post::from_row(const CassRow *row)
         size_t date_length;
         cass_value_get_string(cass_row_get_column(row, 4), &date, &date_length);
 
-        return Post(std::string(post_id, post_id_length),
+        return PostsByDate(std::string(post_id, post_id_length),
                     std::string(user_id, user_id_length),
                     std::string(content, content_length),
                     created_at,
@@ -93,6 +97,6 @@ indiepub::Post indiepub::Post::from_row(const CassRow *row)
     catch (const std::exception &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
-        return Post();
+        return PostsByDate();
     }
 }

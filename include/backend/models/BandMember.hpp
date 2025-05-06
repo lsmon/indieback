@@ -15,6 +15,8 @@ namespace indiepub
         BandMember() = default;
         BandMember(const std::string &band_id, const std::string &user_id);
 
+        static const std::string COLUMN_FAMILY;
+        
         // Getters
         std::string band_id() const;
         std::string user_id() const;

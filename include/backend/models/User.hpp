@@ -13,7 +13,11 @@ namespace indiepub {
         User() = default;
         User(const std::string& user_id, const std::string& email, const std::string& role,
              const std::string& name, std::time_t created_at);
-
+        
+        static const std::string COLUMN_FAMILY;
+        static const std::string IDX_USERS_EMAIL;
+        static const std::string IDX_USERS_ROLE;
+        static const std::string IDX_USERS_NAME;
         // Getters
         std::string user_id() const;
         std::string email() const;

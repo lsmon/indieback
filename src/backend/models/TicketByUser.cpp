@@ -1,35 +1,39 @@
-#include <backend/models/Ticket.hpp>
+#include <backend/models/TicketByUser.hpp>
 #include <backend/IndieBackModels.hpp>
 #include <JSON.hpp>
 #include <string>
 #include <memory>
 
-indiepub::Ticket::Ticket(const std::string &ticket_id, const std::string &user_id,
-                         const std::string &event_id, std::time_t purchase_date)
+const std::string indiepub::TicketByUser::COLUMN_FAMILY = "tickets_by_user";
+const std::string indiepub::TicketByUser::IDX_TICKETS_EVENT_ID = "event_id";
+const std::string indiepub::TicketByUser::IDX_TICKETS_PURCHASE_DATE = "purchase_date";
+
+indiepub::TicketByUser::TicketByUser(const std::string &ticket_id, const std::string &user_id,
+                                     const std::string &event_id, std::time_t purchase_date)
     : ticket_id_(ticket_id), user_id_(user_id), event_id_(event_id),
       purchase_date_(purchase_date) {}
 
-std::string indiepub::Ticket::ticket_id() const
+std::string indiepub::TicketByUser::ticket_id() const
 {
     return ticket_id_;
 }
 
-std::string indiepub::Ticket::user_id() const
+std::string indiepub::TicketByUser::user_id() const
 {
     return user_id_;
 }
 
-std::string indiepub::Ticket::event_id() const
+std::string indiepub::TicketByUser::event_id() const
 {
     return event_id_;
 }
 
-std::time_t indiepub::Ticket::purchase_date() const
+std::time_t indiepub::TicketByUser::purchase_date() const
 {
     return purchase_date_;
 }
 
-std::string indiepub::Ticket::to_json() const
+std::string indiepub::TicketByUser::to_json() const
 {
     std::unique_ptr<JSONObject> json = std::make_unique<JSONObject>();
     json->put("ticket_id", ticket_id_);
@@ -39,9 +43,9 @@ std::string indiepub::Ticket::to_json() const
     return json->str();
 }
 
-indiepub::Ticket indiepub::Ticket::from_json(const std::string &json)
+indiepub::TicketByUser indiepub::TicketByUser::from_json(const std::string &json)
 {
-    Ticket ticket;
+    TicketByUser ticket;
     std::unique_ptr<JSONObject> jsonObject = std::make_unique<JSONObject>(json);
     ticket.ticket_id_ = jsonObject->get("ticket_id").str();
     ticket.user_id_ = jsonObject->get("user_id").str();
@@ -50,7 +54,7 @@ indiepub::Ticket indiepub::Ticket::from_json(const std::string &json)
     return ticket;
 }
 
-indiepub::Ticket indiepub::Ticket::from_row(const CassRow *row)
+indiepub::TicketByUser indiepub::TicketByUser::from_row(const CassRow *row)
 {
     try
     {
@@ -73,14 +77,14 @@ indiepub::Ticket indiepub::Ticket::from_row(const CassRow *row)
         cass_int64_t purchase_date;
         cass_value_get_int64(cass_row_get_column(row, 3), &purchase_date);
 
-        return Ticket(std::string(ticket_id, ticket_id_length),
-                      std::string(user_id, user_id_length),
-                      std::string(event_id, event_id_length),
-                      purchase_date);
+        return TicketByUser(std::string(ticket_id, ticket_id_length),
+                            std::string(user_id, user_id_length),
+                            std::string(event_id, event_id_length),
+                            purchase_date);
     }
     catch (const std::exception &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
-        return Ticket();
     }
+    return TicketByUser();
 }

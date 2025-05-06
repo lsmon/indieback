@@ -24,6 +24,15 @@ CassandraConnection::CassandraConnection(const std::string &contact_points,
     }
 }
 
+CassandraConnection::CassandraConnection(
+    const std::string &contact_points, 
+    const std::string &username, 
+    const std::string &password, 
+    const std::string &keyspace) : CassandraConnection(contact_points, username, password), 
+                                  keyspace_(keyspace)
+{
+}
+
 CassandraConnection::~CassandraConnection()
 {
     cass_future_free(connect_future);

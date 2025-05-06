@@ -44,10 +44,18 @@ set(INDIE_INC
         ${CMAKE_SOURCE_DIR}/include/backend/models/Venue.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/models/Band.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/models/BandMember.hpp
-        ${CMAKE_SOURCE_DIR}/include/backend/models/Event.hpp
-        ${CMAKE_SOURCE_DIR}/include/backend/models/Ticket.hpp
-        ${CMAKE_SOURCE_DIR}/include/backend/models/Post.hpp
-        ${CMAKE_SOURCE_DIR}/include/backend/IndieBackController.hpp)
+        ${CMAKE_SOURCE_DIR}/include/backend/models/EventByVenue.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/models/TicketByEvent.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/models/TicketByUser.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/models/PostsByDate.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/UsersController.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/VenuesController.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/BandsController.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/BandMembersController.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/EventController.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/PostsByDateController.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/TicketsByEventController.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/TicketsByUserController.hpp)
 
 set(INDIE_SRC 
         ${CMAKE_SOURCE_DIR}/src/backend/CassandraConnection.cpp
@@ -56,10 +64,18 @@ set(INDIE_SRC
         ${CMAKE_SOURCE_DIR}/src/backend/models/Venue.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/models/Band.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/models/BandMember.cpp
-        ${CMAKE_SOURCE_DIR}/src/backend/models/Event.cpp
-        ${CMAKE_SOURCE_DIR}/src/backend/models/Ticket.cpp
-        ${CMAKE_SOURCE_DIR}/src/backend/models/Post.cpp
-        ${CMAKE_SOURCE_DIR}/src/backend/IndieBackController.cpp)
+        ${CMAKE_SOURCE_DIR}/src/backend/models/EventByVenue.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/models/TicketByEvent.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/models/TicketByUser.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/models/PostsByDate.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/UsersController.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/VenuesController.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/BandsController.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/BandMembersController.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/EventController.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/PostsByDateController.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/TicketsByEventController.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/TicketsByUserController.cpp)
 
 add_library(indieback ${INDIE_INC} ${INDIE_SRC} ${THIRD_PARTY_INC})
 target_include_directories(indieback PUBLIC ${CMAKE_SOURCE_DIR}/include)

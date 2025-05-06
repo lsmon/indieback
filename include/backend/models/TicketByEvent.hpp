@@ -1,5 +1,5 @@
-#ifndef INDIEPUB_TICKET_HPP
-#define INDIEPUB_TICKET_HPP
+#ifndef INDIEPUB_TICKET_BY_EVENT_HPP
+#define INDIEPUB_TICKET_BY_EVENT_HPP
 
 #include <string>
 #include <vector>
@@ -9,12 +9,16 @@
 
 namespace indiepub
 {
-    class Ticket
+    class TicketByEvent
     {
     public:
-        Ticket() = default;
-        Ticket(const std::string &ticket_id, const std::string &user_id, const std::string &event_id,
+        TicketByEvent() = default;
+        TicketByEvent(const std::string &ticket_id, const std::string &user_id, const std::string &event_id,
                std::time_t purchase_date);
+
+        static const std::string COLUMN_FAMILY;
+        static const std::string IDX_TICKETS_USER_ID;
+        static const std::string IDX_TICKETS_PURCHASE_DATE;
 
         // Getters
         std::string ticket_id() const;
@@ -25,8 +29,8 @@ namespace indiepub
         // JSON serialization
         std::string to_json() const;
 
-        static Ticket from_json(const std::string &json);
-        static Ticket from_row(const CassRow *row);
+        static TicketByEvent from_json(const std::string &json);
+        static TicketByEvent from_row(const CassRow *row);
 
     private:
         std::string ticket_id_; // UUID

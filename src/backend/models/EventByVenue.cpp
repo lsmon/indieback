@@ -1,63 +1,71 @@
-#include <backend/models/Event.hpp>
+#include <backend/models/EventByVenue.hpp>
 #include <backend/IndieBackModels.hpp>
 #include <JSON.hpp>
 #include <string>
 #include <memory>
 
-indiepub::Event::Event(const std::string &event_id, const std::string &venue_id,
-                       const std::string &band_id, const std::string &creator_id,
-                       const std::string &name, std::time_t date, double price,
-                       int capacity, int sold)
+const std::string indiepub::EventByVenue::COLUMN_FAMILY = "events_by_venue";
+const std::string indiepub::EventByVenue::IDX_EVENTS_BAND_ID = "band_id";
+const std::string indiepub::EventByVenue::IDX_EVENTS_CAPACITY = "capacity";
+const std::string indiepub::EventByVenue::IDX_EVENTS_CREATOR_ID = "creator_id";
+const std::string indiepub::EventByVenue::IDX_EVENTS_NAME = "name";
+const std::string indiepub::EventByVenue::IDX_EVENTS_PRICE = "price";
+const std::string indiepub::EventByVenue::IDX_EVENTS_SOLD = "sold";
+
+indiepub::EventByVenue::EventByVenue(const std::string &event_id, const std::string &venue_id,
+                                     const std::string &band_id, const std::string &creator_id,
+                                     const std::string &name, std::time_t date, double price,
+                                     int capacity, int sold)
     : event_id_(event_id), venue_id_(venue_id), band_id_(band_id),
       creator_id_(creator_id), name_(name), date_(date),
       price_(price), capacity_(capacity), sold_(sold) {}
 
-std::string indiepub::Event::event_id() const
+std::string indiepub::EventByVenue::event_id() const
 {
     return event_id_;
 }
 
-std::string indiepub::Event::venue_id() const
+std::string indiepub::EventByVenue::venue_id() const
 {
     return venue_id_;
 }
 
-std::string indiepub::Event::band_id() const
+std::string indiepub::EventByVenue::band_id() const
 {
     return band_id_;
 }
 
-std::string indiepub::Event::creator_id() const
+std::string indiepub::EventByVenue::creator_id() const
 {
     return creator_id_;
 }
 
-std::string indiepub::Event::name() const
+std::string indiepub::EventByVenue::name() const
 {
     return name_;
 }
 
-std::time_t indiepub::Event::date() const
+std::time_t indiepub::EventByVenue::date() const
 {
     return date_;
 }
 
-double indiepub::Event::price() const
+double indiepub::EventByVenue::price() const
 {
     return price_;
 }
 
-int indiepub::Event::capacity() const
+int indiepub::EventByVenue::capacity() const
 {
     return capacity_;
 }
 
-int indiepub::Event::sold() const
+int indiepub::EventByVenue::sold() const
 {
     return sold_;
 }
 
-std::string indiepub::Event::to_json() const
+std::string indiepub::EventByVenue::to_json() const
 {
     std::unique_ptr<JSONObject> json = std::make_unique<JSONObject>();
     json->put("event_id", event_id_);
@@ -72,9 +80,9 @@ std::string indiepub::Event::to_json() const
     return json->str();
 }
 
-indiepub::Event indiepub::Event::from_json(const std::string &json)
+indiepub::EventByVenue indiepub::EventByVenue::from_json(const std::string &json)
 {
-    Event event;
+    EventByVenue event;
     std::unique_ptr<JSONObject> jsonObject = std::make_unique<JSONObject>(json);
     event.event_id_ = jsonObject->get("event_id").str();
     event.venue_id_ = jsonObject->get("venue_id").str();
@@ -88,7 +96,7 @@ indiepub::Event indiepub::Event::from_json(const std::string &json)
     return event;
 }
 
-indiepub::Event indiepub::Event::from_row(const CassRow *row)
+indiepub::EventByVenue indiepub::EventByVenue::from_row(const CassRow *row)
 {
     try
     {
@@ -128,19 +136,19 @@ indiepub::Event indiepub::Event::from_row(const CassRow *row)
         int sold;
         cass_value_get_int32(cass_row_get_column(row, 8), &sold);
 
-        return Event(std::string(event_id, event_id_length),
-                     std::string(venue_id, venue_id_length),
-                     std::string(band_id, band_id_length),
-                     std::string(creator_id, creator_id_length),
-                     std::string(name, name_length),
-                     date,
-                     price,
-                     capacity,
-                     sold);
+        return EventByVenue(std::string(event_id, event_id_length),
+                            std::string(venue_id, venue_id_length),
+                            std::string(band_id, band_id_length),
+                            std::string(creator_id, creator_id_length),
+                            std::string(name, name_length),
+                            date,
+                            price,
+                            capacity,
+                            sold);
     }
     catch (const std::exception &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
-        return Event();
+        return EventByVenue();
     }
 }

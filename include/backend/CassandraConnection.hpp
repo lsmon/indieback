@@ -11,10 +11,12 @@ private:
     
 protected:
     CassSession* session;
+    std::string keyspace_;
     
 
 public:
     CassandraConnection(const std::string& contact_points, const std::string& username, const std::string& password);
+    CassandraConnection(const std::string& contact_points, const std::string& username, const std::string& password, const std::string& keyspace);
 
     ~CassandraConnection();
 

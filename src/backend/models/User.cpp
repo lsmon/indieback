@@ -4,6 +4,11 @@
 #include <string>
 #include <memory>
 
+const std::string indiepub::User::COLUMN_FAMILY = "users";
+const std::string indiepub::User::IDX_USERS_EMAIL = "email";
+const std::string indiepub::User::IDX_USERS_ROLE = "role";
+const std::string indiepub::User::IDX_USERS_NAME = "name";
+
 indiepub::User::User(const std::string &user_id, const std::string &email, const std::string &role,
                      const std::string &name, std::time_t created_at)
     : user_id_(user_id), email_(email), role_(role), name_(name), created_at_(created_at) {}
