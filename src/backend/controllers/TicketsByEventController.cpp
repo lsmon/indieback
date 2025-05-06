@@ -1,5 +1,5 @@
-#include <backend/IndieBackController.hpp>
 #include <backend/controllers/TicketsByEventController.hpp>
+#include <backend/models/TicketByEvent.hpp>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -75,6 +75,8 @@ std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getAllT
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
+    // If we reach here, it means no tickets were found
+    throw std::runtime_error("No tickets found");
 }
 
 indiepub::TicketByEvent indiepub::TicketsByEventController::getTicketById(const std::string &ticket_id) {

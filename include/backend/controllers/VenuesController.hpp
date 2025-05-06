@@ -20,4 +20,4 @@ namespace indiepub {
         // Add any private members or methods if needed
     };
 }
-#endif INDIEPUB_VENUES_CONTROLLER_HPP
+#endif // INDIEPUB_VENUES_CONTROLLER_HPP

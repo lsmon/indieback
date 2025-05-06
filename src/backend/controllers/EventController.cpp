@@ -83,6 +83,8 @@ std::vector<indiepub::EventByVenue> indiepub::EventController::getAllEvents() {
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
+    // If we reach here, it means no events were found
+    throw std::runtime_error("No events found");
 }
 
 indiepub::EventByVenue indiepub::EventController::getEventById(const std::string &event_id) {

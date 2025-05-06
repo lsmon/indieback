@@ -76,6 +76,8 @@ std::vector<indiepub::TicketByUser> indiepub::TicketsByUserController::getAllTic
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
+    // If we reach here, it means no tickets were found
+    throw std::runtime_error("No tickets found");
 }
 
 indiepub::TicketByUser indiepub::TicketsByUserController::getTicketById(const std::string &ticket_id) {

@@ -71,6 +71,8 @@ std::vector<indiepub::BandMember> indiepub::BandMembersController::getAllBandMem
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
+    // If we reach here, it means no band members were found
+    throw std::runtime_error("No band members found");
 }
 
 indiepub::BandMember indiepub::BandMembersController::getBandMemberById(const std::string &band_id, const std::string &user_id) {
@@ -145,4 +147,6 @@ std::vector<indiepub::BandMember> indiepub::BandMembersController::getBandMember
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
+    // If we reach here, it means no band members were found
+    throw std::runtime_error("No band members found for the given band ID");
 }

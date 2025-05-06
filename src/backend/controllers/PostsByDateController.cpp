@@ -57,9 +57,10 @@ std::vector<indiepub::PostsByDate> indiepub::PostsByDateController::getAllPosts(
     CassStatement *statement = cass_statement_new(query.c_str(), 0);
     CassFuture *query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
+    std::vector<indiepub::PostsByDate> posts;
     if (cass_future_error_code(query_future) == CASS_OK) {
         const CassResult *result = cass_future_get_result(query_future);
-        std::vector<indiepub::PostsByDate> posts;
+        
         CassIterator *iterator = cass_iterator_from_result(result);
 
         while (cass_iterator_next(iterator)) {
@@ -69,12 +70,13 @@ std::vector<indiepub::PostsByDate> indiepub::PostsByDateController::getAllPosts(
 
         cass_iterator_free(iterator);
         cass_result_free(result);
-        return posts;
+        
     } else {
         throw std::runtime_error("Failed to execute query");
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
+    return posts;
 }
 
 indiepub::PostsByDate indiepub::PostsByDateController::getPostById(const std::string &post_id) {
@@ -144,4 +146,6 @@ std::vector<indiepub::PostsByDate> indiepub::PostsByDateController::getPostsByUs
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
+    // If we reach here, it means no posts were found
+    throw std::runtime_error("No posts found for the given user ID");
 }

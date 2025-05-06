@@ -28,9 +28,9 @@ CassandraConnection::CassandraConnection(
     const std::string &contact_points, 
     const std::string &username, 
     const std::string &password, 
-    const std::string &keyspace) : CassandraConnection(contact_points, username, password), 
-                                  keyspace_(keyspace)
+    const std::string &keyspace) : CassandraConnection(contact_points, username, password) 
 {
+    this->keyspace_ = keyspace;
 }
 
 CassandraConnection::~CassandraConnection()

@@ -48,6 +48,7 @@ set(INDIE_INC
         ${CMAKE_SOURCE_DIR}/include/backend/models/TicketByEvent.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/models/TicketByUser.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/models/PostsByDate.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/models/DailyTicketSales.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/UsersController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/VenuesController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/BandsController.hpp
@@ -55,7 +56,8 @@ set(INDIE_INC
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/EventController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/PostsByDateController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/TicketsByEventController.hpp
-        ${CMAKE_SOURCE_DIR}/include/backend/controllers/TicketsByUserController.hpp)
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/TicketsByUserController.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/DailyTicketSalesController.hpp)
 
 set(INDIE_SRC 
         ${CMAKE_SOURCE_DIR}/src/backend/CassandraConnection.cpp
@@ -68,6 +70,7 @@ set(INDIE_SRC
         ${CMAKE_SOURCE_DIR}/src/backend/models/TicketByEvent.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/models/TicketByUser.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/models/PostsByDate.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/models/DailyTicketSales.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/UsersController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/VenuesController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/BandsController.cpp
@@ -75,7 +78,8 @@ set(INDIE_SRC
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/EventController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/PostsByDateController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/TicketsByEventController.cpp
-        ${CMAKE_SOURCE_DIR}/src/backend/controllers/TicketsByUserController.cpp)
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/TicketsByUserController.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/DailyTicketSalesController.cpp)
 
 add_library(indieback ${INDIE_INC} ${INDIE_SRC} ${THIRD_PARTY_INC})
 target_include_directories(indieback PUBLIC ${CMAKE_SOURCE_DIR}/include)
@@ -85,12 +89,8 @@ target_link_libraries(indieback ${THIRD_PARTY_LIB})
 include(CTest)
 enable_testing()
 
-add_executable(test_${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/test/TestIndieback.cpp ${INDIE_INC} ${THIRD_PARTY_INC})
-target_include_directories(test_${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(test_${PROJECT_NAME} ${THIRD_PARTY_LIB} indieback)
+add_executable(indieback_test ${CMAKE_SOURCE_DIR}/tests/TestIndieback.cpp ${INDIE_INC} ${INDIE_SRC} ${THIRD_PARTY_INC})
+target_include_directories(indieback_test PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(indieback_test indieback ${THIRD_PARTY_LIB})
 
-add_test(TEST_ALL test_indieback COMMAND test_${PROJECT_NAME})
-add_test(TEST_CASSANDRA test_indieback COMMAND test_${PROJECT_NAME} cassandra)
-add_test(TEST_MODELS test_indieback COMMAND test_${PROJECT_NAME} models)
-add_test(TEST_CONTROLLER test_indieback COMMAND test_${PROJECT_NAME} controller)
-
+add_test(NAME IndieBackTest COMMAND indieback_test)
