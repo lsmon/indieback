@@ -78,34 +78,68 @@ indiepub::Venue indiepub::Venue::from_row(const CassRow *row)
         {
             throw std::runtime_error("Row is null");
         }
-        const char *venue_id;
-        size_t venue_id_length;
-        cass_value_get_string(cass_row_get_column(row, 0), &venue_id, &venue_id_length);
+        // Extract venue_id (UUID)
+        CassUuid venue_id;
+        const CassValue *venue_id_value = cass_row_get_column_by_name(row, "venue_id");
+        if (cass_value_get_uuid(venue_id_value, &venue_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get venue_id from row");
+        }
+        char venue_id_str[37];
+        cass_uuid_string(venue_id, venue_id_str);
 
-        const char *owner_id;
-        size_t owner_id_length;
-        cass_value_get_string(cass_row_get_column(row, 1), &owner_id, &owner_id_length);
+        // Extract owner_id (UUID)
+        CassUuid owner_id;
+        const CassValue *owner_id_value = cass_row_get_column_by_name(row, "owner_id");
+        if (cass_value_get_uuid(owner_id_value, &owner_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get owner_id from row");
+        }
+        char owner_id_str[37];
+        cass_uuid_string(owner_id, owner_id_str);
 
-        const char *name;
+        // Extract name
+        const CassValue *name_value = cass_row_get_column_by_name(row, "name");
+        const char *name_str;
         size_t name_length;
-        cass_value_get_string(cass_row_get_column(row, 2), &name, &name_length);
+        if (cass_value_get_string(name_value, &name_str, &name_length) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get name from row");
+        }
 
-        const char *location;
+        // Extract location
+        const CassValue *location_value = cass_row_get_column_by_name(row, "location");
+        const char *location_str;
         size_t location_length;
-        cass_value_get_string(cass_row_get_column(row, 3), &location, &location_length);
+        if (cass_value_get_string(location_value, &location_str, &location_length) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get location from row");
+        }
 
-        int capacity;
-        cass_value_get_int32(cass_row_get_column(row, 4), &capacity);
+        // Extract capacity
+        const CassValue *capacity_value = cass_row_get_column_by_name(row, "capacity");
+        int32_t capacity;
+        if (cass_value_get_int32(capacity_value, &capacity) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get capacity from row");
+        }
 
+        // Extract created_at
+        const CassValue *created_at_value = cass_row_get_column_by_name(row, "created_at");
         cass_int64_t created_at;
-        cass_value_get_int64(cass_row_get_column(row, 5), &created_at);
-
-        return Venue(std::string(venue_id, venue_id_length),
-                     std::string(owner_id, owner_id_length),
-                     std::string(name, name_length),
-                     std::string(location, location_length),
-                     capacity,
-                     created_at);
+        if (cass_value_get_int64(created_at_value, &created_at) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get created_at from row");
+        }
+        // Create and return the Venue object
+        return Venue(
+            std::string(venue_id_str), 
+            std::string(owner_id_str), 
+            std::string(name_str, name_length),
+            std::string(location_str, location_length),
+            capacity,
+            static_cast<std::time_t>(created_at / 1000)
+        ); // Convert from milliseconds to seconds
     }
     catch (const std::exception &e)
     {

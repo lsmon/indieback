@@ -11,9 +11,10 @@ namespace indiepub {
         BandsController() = default;
         BandsController(const std::string& contact_points, const std::string& username, const std::string& password, const std::string& keyspace);
 
-        void insertBand(const indiepub::Band& band);
+        bool insertBand(const indiepub::Band& band);
         std::vector<indiepub::Band> getAllBands();
         indiepub::Band getBandById(const std::string& band_id);
+        indiepub::Band getBandByName(const std::string& name);
         indiepub::Band getBandBy(const std::string& name, const std::string& genre);
         
     private:

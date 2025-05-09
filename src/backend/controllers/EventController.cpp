@@ -8,6 +8,45 @@ indiepub::EventController::EventController(const std::string &contact_points, co
 }
 
 void indiepub::EventController::insertEvent(const indiepub::EventByVenue &event) {
+    // Check if the event_id is a valid UUID
+    if (event.event_id().empty()) {
+        throw std::runtime_error("Event ID cannot be empty");
+    }
+    if (event.venue_id().empty()) {
+        throw std::runtime_error("Venue ID cannot be empty");
+    }
+    if (event.band_id().empty()) {
+        throw std::runtime_error("Band ID cannot be empty");
+    }
+    if (event.creator_id().empty()) {
+        throw std::runtime_error("Creator ID cannot be empty");
+    }
+    if (event.name().empty()) {
+        throw std::runtime_error("Name cannot be empty");
+    }
+    if (event.date() <= 0) {
+        throw std::runtime_error("Date must be positive");
+    }
+    if (event.price() < 0) {
+        throw std::runtime_error("Price cannot be negative");
+    }
+    if (event.capacity() <= 0) {
+        throw std::runtime_error("Capacity must be positive");
+    }
+    if (event.sold() < 0) {
+        throw std::runtime_error("Sold tickets cannot be negative");
+    }
+
+    indiepub::EventByVenue existingEvent = getEventById(event.event_id());
+    if (existingEvent.event_id() == event.event_id()) {
+        throw std::runtime_error("Event with this ID already exists");
+    }
+    
+    indiepub::EventByVenue existingEventByNameAndVenue = getEventBy(event.name(), event.venue_id());
+    if (existingEventByNameAndVenue.event_id() == event.event_id()) {
+        throw std::runtime_error("Event with this name and venue already exists");
+    }
+
     if (!isConnected()) {
         throw std::runtime_error("Not connected to Cassandra");
     }
@@ -65,9 +104,10 @@ std::vector<indiepub::EventByVenue> indiepub::EventController::getAllEvents() {
     CassStatement *statement = cass_statement_new(query.c_str(), 0);
     CassFuture *query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
+    std::vector<indiepub::EventByVenue> events;
     if (cass_future_error_code(query_future) == CASS_OK) {
         const CassResult *result = cass_future_get_result(query_future);
-        std::vector<indiepub::EventByVenue> events;
+        
         CassIterator *iterator = cass_iterator_from_result(result);
 
         while (cass_iterator_next(iterator)) {
@@ -77,14 +117,13 @@ std::vector<indiepub::EventByVenue> indiepub::EventController::getAllEvents() {
 
         cass_iterator_free(iterator);
         cass_result_free(result);
-        return events;
     } else {
         throw std::runtime_error("Failed to execute query");
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
     // If we reach here, it means no events were found
-    throw std::runtime_error("No events found");
+    return events;
 }
 
 indiepub::EventByVenue indiepub::EventController::getEventById(const std::string &event_id) {

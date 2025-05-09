@@ -94,3 +94,8 @@ target_include_directories(indieback_test PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(indieback_test indieback ${THIRD_PARTY_LIB})
 
 add_test(NAME IndieBackTest COMMAND indieback_test)
+# Add tests for each argument
+add_test(NAME TEST_CASSANDRA COMMAND indieback_test cassandra)
+add_test(NAME TEST_MODELS COMMAND indieback_test models)
+add_test(NAME TEST_CONTROLLERS COMMAND indieback_test controller)
+

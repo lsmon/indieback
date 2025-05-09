@@ -10,6 +10,14 @@ indiepub::BandMembersController::BandMembersController(const std::string &contac
 }
 
 void indiepub::BandMembersController::insertBandMember(const indiepub::BandMember &band_member) {
+    // Check if the band_id and user_id are valid UUIDs
+    if (band_member.band_id().empty()) {
+        throw std::runtime_error("Band ID cannot be empty");
+    }
+    if (band_member.user_id().empty()) {
+        throw std::runtime_error("User ID cannot be empty");
+    }
+
     if (!isConnected()) {
         throw std::runtime_error("Not connected to Cassandra");
     }
@@ -72,7 +80,7 @@ std::vector<indiepub::BandMember> indiepub::BandMembersController::getAllBandMem
     cass_statement_free(statement);
     cass_future_free(query_future);
     // If we reach here, it means no band members were found
-    throw std::runtime_error("No band members found");
+    return std::vector<indiepub::BandMember>(); // Return an empty vector in case of failure
 }
 
 indiepub::BandMember indiepub::BandMembersController::getBandMemberById(const std::string &band_id, const std::string &user_id) {
@@ -111,7 +119,7 @@ indiepub::BandMember indiepub::BandMembersController::getBandMemberById(const st
     cass_statement_free(statement);
     cass_future_free(query_future);
     // If we reach here, it means the band member was not found
-    throw std::runtime_error("Band member not found");
+    return indiepub::BandMember(); // Return an empty BandMember object in case of failure
 }
 
 std::vector<indiepub::BandMember> indiepub::BandMembersController::getBandMembersByBandId(const std::string &band_id) {
@@ -148,5 +156,5 @@ std::vector<indiepub::BandMember> indiepub::BandMembersController::getBandMember
     cass_statement_free(statement);
     cass_future_free(query_future);
     // If we reach here, it means no band members were found
-    throw std::runtime_error("No band members found for the given band ID");
+    return std::vector<indiepub::BandMember>(); // Return an empty vector in case of failure
 }

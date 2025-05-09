@@ -110,7 +110,7 @@ indiepub::PostsByDate indiepub::PostsByDateController::getPostById(const std::st
     cass_statement_free(statement);
     cass_future_free(query_future);
     // If we reach here, it means the post was not found
-    throw std::runtime_error("Post not found");
+    return indiepub::PostsByDate(); // Return an empty Post object in case of failure
 }
 
 std::vector<indiepub::PostsByDate> indiepub::PostsByDateController::getPostsByUserId(const std::string &user_id) {
@@ -147,5 +147,5 @@ std::vector<indiepub::PostsByDate> indiepub::PostsByDateController::getPostsByUs
     cass_statement_free(statement);
     cass_future_free(query_future);
     // If we reach here, it means no posts were found
-    throw std::runtime_error("No posts found for the given user ID");
+    return std::vector<indiepub::PostsByDate>(); // Return an empty vector in case of failure
 }

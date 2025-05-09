@@ -76,7 +76,7 @@ std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getAllT
     cass_statement_free(statement);
     cass_future_free(query_future);
     // If we reach here, it means no tickets were found
-    throw std::runtime_error("No tickets found");
+    return std::vector<indiepub::TicketByEvent>(); // Return an empty vector in case of failure
 }
 
 indiepub::TicketByEvent indiepub::TicketsByEventController::getTicketById(const std::string &ticket_id) {
@@ -110,7 +110,7 @@ indiepub::TicketByEvent indiepub::TicketsByEventController::getTicketById(const 
     cass_statement_free(statement);
     cass_future_free(query_future);
     // If we reach here, it means the ticket was not found
-    throw std::runtime_error("Ticket not found");
+    return indiepub::TicketByEvent(); // Return an empty TicketByEvent object in case of failure
 }
 
 std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getTicketsByUserId(const std::string &user_id) {
@@ -147,7 +147,7 @@ std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getTick
     cass_statement_free(statement);
     cass_future_free(query_future);
     // If we reach here, it means the ticket was not found
-    throw std::runtime_error("Ticket not found");
+    return std::vector<indiepub::TicketByEvent>(); // Return an empty vector in case of failure
 }
 
 std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getTicketsByEventId(const std::string &event_id) {
@@ -184,5 +184,5 @@ std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getTick
     cass_statement_free(statement);
     cass_future_free(query_future);
     // If we reach here, it means the ticket was not found
-    throw std::runtime_error("Ticket not found");
+    return std::vector<indiepub::TicketByEvent>(); // Return an empty vector in case of failure
 }

@@ -69,29 +69,60 @@ indiepub::User indiepub::User::from_row(const CassRow *row)
         {
             throw std::runtime_error("Row is null");
         }
-        const char *user_id;
-        size_t user_id_length;
-        cass_value_get_string(cass_row_get_column(row, 0), &user_id, &user_id_length);
 
+        // Extract user_id (UUID)
+        CassUuid user_id;
+        const CassValue *user_id_value = cass_row_get_column_by_name(row, "user_id");
+        if (cass_value_get_uuid(user_id_value, &user_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get user_id");
+        }
+        char user_id_str[CASS_UUID_STRING_LENGTH];
+        cass_uuid_string(user_id, user_id_str);
+
+        // Extract email (TEXT)
         const char *email;
         size_t email_length;
-        cass_value_get_string(cass_row_get_column(row, 1), &email, &email_length);
+        const CassValue *email_value = cass_row_get_column_by_name(row, "email");
+        if (cass_value_get_string(email_value, &email, &email_length) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get email");
+        }
 
+        // Extract role (TEXT)
         const char *role;
         size_t role_length;
-        cass_value_get_string(cass_row_get_column(row, 2), &role, &role_length);
+        const CassValue *role_value = cass_row_get_column_by_name(row, "role");
+        if (cass_value_get_string(role_value, &role, &role_length) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get role");
+        }
 
+        // Extract name (TEXT)
         const char *name;
         size_t name_length;
-        cass_value_get_string(cass_row_get_column(row, 3), &name, &name_length);
+        const CassValue *name_value = cass_row_get_column_by_name(row, "name");
+        if (cass_value_get_string(name_value, &name, &name_length) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get name");
+        }
 
+        // Extract created_at (TIMESTAMP)
         cass_int64_t created_at;
-        cass_value_get_int64(cass_row_get_column(row, 4), &created_at);
-        return User(std::string(user_id, user_id_length),
-                    std::string(email, email_length),
-                    std::string(role, role_length),
-                    std::string(name, name_length),
-                    created_at);
+        const CassValue *created_at_value = cass_row_get_column_by_name(row, "created_at");
+        if (cass_value_get_int64(created_at_value, &created_at) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get created_at");
+        }
+
+        // Construct and return the User object
+        return User(
+            std::string(user_id_str),
+            std::string(email, email_length),
+            std::string(role, role_length),
+            std::string(name, name_length),
+            static_cast<std::time_t>(created_at / 1000) // Convert from milliseconds to seconds
+        );
     }
     catch (const std::exception &e)
     {

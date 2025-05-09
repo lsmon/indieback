@@ -69,30 +69,52 @@ indiepub::Band indiepub::Band::from_row(const CassRow *row)
         {
             throw std::runtime_error("Row is null");
         }
-        const char *band_id;
-        size_t band_id_length;
-        cass_value_get_string(cass_row_get_column(row, 0), &band_id, &band_id_length);
+        
+        CassUuid band_id;
+        const CassValue *band_id_value = cass_row_get_column_by_name(row, "band_id");
+        if (cass_value_get_uuid(band_id_value, &band_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get band_id from row");
+        }
+        char band_id_str[37];
+        cass_uuid_string(band_id, band_id_str);
+        
+        const CassValue *name_value = cass_row_get_column_by_name(row, "name");
+        const char *name_str;
+        size_t name_size;
+        if (cass_value_get_string(name_value, &name_str, &name_size) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get name from row");
+        }
 
-        const char *name;
-        size_t name_length;
-        cass_value_get_string(cass_row_get_column(row, 1), &name, &name_length);
-
-        const char *genre;
-        size_t genre_length;
-        cass_value_get_string(cass_row_get_column(row, 2), &genre, &genre_length);
-
-        const char *description;
-        size_t description_length;
-        cass_value_get_string(cass_row_get_column(row, 3), &description, &description_length);
-
+        const CassValue *genre_value = cass_row_get_column_by_name(row, "genre");
+        const char *genre_str;
+        size_t genre_size;
+        if (cass_value_get_string(genre_value, &genre_str, &genre_size) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get genre from row");
+        }
+        const CassValue *description_value = cass_row_get_column_by_name(row, "description");
+        const char *description_str;
+        size_t description_size;
+        if (cass_value_get_string(description_value, &description_str, &description_size) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get description from row");
+        }
+        
+        const CassValue *created_at_value = cass_row_get_column_by_name(row, "created_at");
         cass_int64_t created_at;
-        cass_value_get_int64(cass_row_get_column(row, 4), &created_at);
-
-        return Band(std::string(band_id, band_id_length),
-                    std::string(name, name_length),
-                    std::string(genre, genre_length),
-                    std::string(description, description_length),
-                    created_at);
+        if (cass_value_get_int64(created_at_value, &created_at) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get created_at from row");
+        }
+        
+        return Band(
+            band_id_str, 
+            std::string(name_str, name_size), 
+            std::string(genre_str, genre_size),
+            std::string(description_str, description_size), 
+            static_cast<std::time_t>(created_at));
     }
     catch (const std::exception &e)
     {

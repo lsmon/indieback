@@ -9,6 +9,13 @@ indiepub::DailyTicketSalesController::DailyTicketSalesController(const std::stri
 }
 
 void indiepub::DailyTicketSalesController::insertDailyTicketSales(const indiepub::DailyTicketSales &daily_ticket_sales) {
+    // Check if the event_id is a valid UUID
+    if (daily_ticket_sales.event_id().empty()) {
+        throw std::runtime_error("Event ID cannot be empty");
+    }
+    if (daily_ticket_sales.sale_date().empty()) {
+        throw std::runtime_error("Sale date cannot be empty");
+    }
     if (!isConnected()) {
         throw std::runtime_error("Not connected to Cassandra");
     }
@@ -99,5 +106,5 @@ indiepub::DailyTicketSales indiepub::DailyTicketSalesController::getDailyTicketS
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
-    throw std::runtime_error("Daily ticket sales not found");
+    return indiepub::DailyTicketSales(); // Return an empty DailyTicketSales object if not found
 }

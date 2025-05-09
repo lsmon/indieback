@@ -150,8 +150,8 @@ void testCassandraConnection()
                 ticket_id UUID,
                 event_id UUID,
                 purchase_date TIMESTAMP,
-                PRIMARY KEY (user_id, ticket_id, parchese_date)
-            ) WITH CLUSTERING BY (purchase_date DESC);)");
+                PRIMARY KEY (user_id, ticket_id, purchase_date)
+            ) WITH CLUSTERING ORDER BY (ticket_id DESC, purchase_date DESC);)");
         std::string createIdxTicketsEventId = "CREATE INDEX IF NOT EXISTS idx_tickets_by_event_id ON indie_pub.tickets_by_user (event_id);";
         cassandra.executeQuery(createTicketsTable);
         cassandra.executeQuery(createIdxTicketsEventId);
@@ -163,7 +163,7 @@ void testCassandraConnection()
                 user_id UUID,
                 purchase_date TIMESTAMP,
                 PRIMARY KEY (event_id, ticket_id, purchase_date)
-            ) WITH CLUSTERING BY (purchase_date DESC);)");
+            ) WITH CLUSTERING ORDER BY (ticket_id DESC, purchase_date DESC);)");
         std::string createIdxTicketsByEventUserId = "CREATE INDEX IF NOT EXISTS idx_tickets_by_event_id ON indie_pub.tickets_by_event (user_id);";
         cassandra.executeQuery(createTicketsByEventTable);
         cassandra.executeQuery(createIdxTicketsByEventUserId);
@@ -176,7 +176,7 @@ void testCassandraConnection()
                 content TEXT,
                 created_at TIMESTAMP,
                 PRIMARY KEY (post_id, date, created_at)
-            ) WITH CLUSTERING ORDER BY (created_at DESC);)");
+            ) WITH CLUSTERING ORDER BY (date DESC, created_at DESC);)");
         std::string createIdxPostsByUserId = "CREATE INDEX IF NOT EXISTS idx_posts_by_user_id ON indie_pub.posts_by_date (user_id);";
         cassandra.executeQuery(createPostsByUserTable);
         cassandra.executeQuery(createIdxPostsByUserId);
@@ -187,30 +187,29 @@ void testCassandraConnection()
                 sale_date DATE,
                 tickets_sold COUNTER,
                 PRIMARY KEY (event_id, sale_date)
-            ) WITH CLUSTERING BY (sale_date DESC);)");
+            ) WITH CLUSTERING ORDER BY (sale_date DESC);)");
         cassandra.executeQuery(createDailyTicketSalesTable);
         assert(true);
     }
     catch (const std::exception &e)
     {
+        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__ << std::endl;
         assert(false);
-        std::cerr << e.what() << '\n';
     }
 }
 
-std::unique_ptr<indiepub::User> user;
-std::unique_ptr<indiepub::Venue> venue;
-std::unique_ptr<indiepub::Band> band;
-std::unique_ptr<indiepub::EventByVenue> event;
-std::unique_ptr<indiepub::TicketByEvent> ticket;
-std::unique_ptr<indiepub::PostsByDate> post;
-std::unique_ptr<indiepub::BandMember> bandMember;
-std::unique_ptr<indiepub::DailyTicketSales> dailyTicketSales;
+std::unique_ptr<indiepub::User> user = std::make_unique<indiepub::User>(UUID::random(), "abc@def.com", "fan", "John Doe", std::time(nullptr));
+std::unique_ptr<indiepub::Venue> venue = std::make_unique<indiepub::Venue>(UUID::random(), UUID::random(), "The Grand Hall", "123 Main St", 500, std::time(nullptr));
+std::unique_ptr<indiepub::Band> band = std::make_unique<indiepub::Band>(UUID::random(), "The Rockers", "Rock", "A popular rock band", std::time(nullptr));
+std::unique_ptr<indiepub::EventByVenue> event = std::make_unique<indiepub::EventByVenue>(UUID::random(), UUID::random(), UUID::random(), UUID::random(), "Concert", std::time(nullptr), 50.0, 100, 10);
+std::unique_ptr<indiepub::TicketByEvent> ticket = std::make_unique<indiepub::TicketByEvent>(UUID::random(), UUID::random(), UUID::random(), std::time(nullptr));
+std::unique_ptr<indiepub::PostsByDate> post = std::make_unique<indiepub::PostsByDate>(UUID::random(), UUID::random(), "This is a test post", std::time(nullptr), "2023-10-01");
+std::unique_ptr<indiepub::BandMember> bandMember = std::make_unique<indiepub::BandMember>(UUID::random(), UUID::random());
+std::unique_ptr<indiepub::DailyTicketSales> dailyTicketSales = std::make_unique<indiepub::DailyTicketSales>(UUID::random(), indiepub::timestamp_to_string(std::time(nullptr)), 100);
 
 void testUserModel()
-{
-    // Create a User object
-    user = std::make_unique<indiepub::User>(UUID::random(), "abc@def.com", "fan", "John Doe", std::time(nullptr));
+{    
     std::cout << "User ID: " << user->user_id() << std::endl;
     std::cout << "Email: " << user->email() << std::endl;
     std::cout << "Role: " << user->role() << std::endl;
@@ -221,8 +220,6 @@ void testUserModel()
 
 void testVenueModel()
 {
-    // Create a Venue object
-    venue = std::make_unique<indiepub::Venue>(UUID::random(), UUID::random(), "The Grand Hall", "123 Main St", 500, std::time(nullptr));
     std::cout << "Venue ID: " << venue->venue_id() << std::endl;
     std::cout << "Owner ID: " << venue->owner_id() << std::endl;
     std::cout << "Name: " << venue->name() << std::endl;
@@ -234,8 +231,6 @@ void testVenueModel()
 
 void testBandModel()
 {
-    // Create a Band object
-    band = std::make_unique<indiepub::Band>(UUID::random(), "The Rockers", "Rock", "A popular rock band", std::time(nullptr));
     std::cout << "Band ID: " << band->band_id() << std::endl;
     std::cout << "Name: " << band->name() << std::endl;
     std::cout << "Genre: " << band->genre() << std::endl;
@@ -246,8 +241,6 @@ void testBandModel()
 
 void testEventModel()
 {
-    // Create an Event object
-    event = std::make_unique<indiepub::EventByVenue>(UUID::random(), UUID::random(), UUID::random(), UUID::random(), "Concert", std::time(nullptr), 50.0, 100, 10);
     std::cout << "Event ID: " << event->event_id() << std::endl;
     std::cout << "Venue ID: " << event->venue_id() << std::endl;
     std::cout << "Band ID: " << event->band_id() << std::endl;
@@ -262,8 +255,6 @@ void testEventModel()
 
 void testTicketModel()
 {
-    // Create a Ticket object
-    ticket = std::make_unique<indiepub::TicketByEvent>(UUID::random(), UUID::random(), UUID::random(), std::time(nullptr));
     std::cout << "Ticket ID: " << ticket->ticket_id() << std::endl;
     std::cout << "User ID: " << ticket->user_id() << std::endl;
     std::cout << "Event ID: " << ticket->event_id() << std::endl;
@@ -273,8 +264,6 @@ void testTicketModel()
 
 void testPostModel()
 {
-    // Create a Post object
-    post = std::make_unique<indiepub::PostsByDate>(UUID::random(), UUID::random(), "This is a test post", std::time(nullptr), "2023-10-01");
     std::cout << "Post ID: " << post->post_id() << std::endl;
     std::cout << "User ID: " << post->user_id() << std::endl;
     std::cout << "Content: " << post->content() << std::endl;
@@ -285,8 +274,6 @@ void testPostModel()
 
 void testBandMemberModel()
 {
-    // Create a BandMember object
-    bandMember = std::make_unique<indiepub::BandMember>(UUID::random(), UUID::random());
     std::cout << "Band ID: " << bandMember->band_id() << std::endl;
     std::cout << "User ID: " << bandMember->user_id() << std::endl;
     std::cout << "Band Member JSON: " << bandMember->to_json() << std::endl;
@@ -294,8 +281,6 @@ void testBandMemberModel()
 
 void testDailyTicketSalesModel()
 {
-    // Create a DailyTicketSales object
-    dailyTicketSales = std::make_unique<indiepub::DailyTicketSales>(UUID::random(), indiepub::timestamp_to_string(std::time(nullptr)), 100);
     std::cout << "Event ID: " << dailyTicketSales->event_id() << std::endl;
     std::cout << "Date: " << dailyTicketSales->sale_date() << std::endl;
     std::cout << "Total Tickets: " << dailyTicketSales->tickets_sold() << std::endl;
@@ -331,7 +316,6 @@ void testUsersControllers()
         {
             std::cout << u.to_json() << std::endl;
         }
-
         
         std::cout << "User retrieved by email successfully!" << std::endl;
         std::cout << usersController.getUserByEmail(user->email()).to_json() << std::endl;
@@ -342,6 +326,7 @@ void testUsersControllers()
     catch (const std::exception &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__ << std::endl;
         assert(false);
     }
 }
@@ -366,6 +351,7 @@ void testVenuesControllers()
     catch (const std::exception &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__ << std::endl;
         assert(false);
     }
 }
@@ -390,6 +376,7 @@ void testBandControllers()
     catch (const std::exception &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__ << std::endl;
         assert(false);
     }
 }
@@ -413,6 +400,7 @@ void testEventControllers()
     catch (const std::exception &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__ << std::endl;
         assert(false);
     }
 }
@@ -440,6 +428,7 @@ void testTicketControllers()
     catch (const std::exception &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__ << std::endl;
         assert(false);
     }
 }
@@ -467,6 +456,7 @@ void testPostControllers()
     catch (const std::exception &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__ << std::endl;
         assert(false);
     }
 }
@@ -499,6 +489,7 @@ void testBandMemberControllers()
     catch (const std::exception &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__ << std::endl;
         assert(false);
     }
 }
@@ -521,6 +512,7 @@ void testDailyTicketSalesControllers()
     catch (const std::exception &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__ << std::endl;
         assert(false);
     }
 }
@@ -544,7 +536,6 @@ int main(int argc, char *argv[])
     if (argc > 1)
     {
         testType = argv[1];
-        return 1;
     }
     if (testType == "all")
     {
