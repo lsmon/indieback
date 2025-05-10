@@ -11,7 +11,7 @@ namespace indiepub {
         EventController() = default;
         EventController(const std::string& contact_points, const std::string& username, const std::string& password, const std::string& keyspace);
 
-        void insertEvent(const indiepub::EventByVenue& event);
+        bool insertEvent(const indiepub::EventByVenue& event);
         std::vector<indiepub::EventByVenue> getAllEvents();
         indiepub::EventByVenue getEventById(const std::string& event_id);
         indiepub::EventByVenue getEventBy(const std::string& name, const std::string& location);

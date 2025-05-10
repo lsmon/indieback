@@ -69,14 +69,14 @@ indiepub::Band indiepub::Band::from_row(const CassRow *row)
         {
             throw std::runtime_error("Row is null");
         }
-        
+
         CassUuid band_id;
         const CassValue *band_id_value = cass_row_get_column_by_name(row, "band_id");
         if (cass_value_get_uuid(band_id_value, &band_id) != CASS_OK)
         {
             throw std::runtime_error("Failed to get band_id from row");
         }
-        char band_id_str[37];
+        char band_id_str[CASS_UUID_STRING_LENGTH];
         cass_uuid_string(band_id, band_id_str);
         
         const CassValue *name_value = cass_row_get_column_by_name(row, "name");

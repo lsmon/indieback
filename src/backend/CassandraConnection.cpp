@@ -6,7 +6,7 @@
 CassandraConnection::CassandraConnection(const std::string &contact_points,
                                          const std::string &username,
                                          const std::string &password)
-    : cluster(nullptr), session(nullptr), connect_future(nullptr)
+    : contact_points_(contact_points), username_(username), password_(password)
 {
     cluster = cass_cluster_new();
     session = cass_session_new();

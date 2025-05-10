@@ -7,48 +7,61 @@
 indiepub::EventController::EventController(const std::string &contact_points, const std::string &username, const std::string &password, const std::string &keyspace) : CassandraConnection(contact_points, username, password, keyspace) {
 }
 
-void indiepub::EventController::insertEvent(const indiepub::EventByVenue &event) {
+bool indiepub::EventController::insertEvent(const indiepub::EventByVenue &event) {
+    bool isValid = false;
     // Check if the event_id is a valid UUID
     if (event.event_id().empty()) {
-        throw std::runtime_error("Event ID cannot be empty");
+        std::cerr << "Event ID cannot be empty" << std::endl;
+        return isValid;
     }
     if (event.venue_id().empty()) {
-        throw std::runtime_error("Venue ID cannot be empty");
+        std::cerr << "Venue ID cannot be empty" << std::endl;
+        return isValid;
     }
     if (event.band_id().empty()) {
-        throw std::runtime_error("Band ID cannot be empty");
+        std::cerr << "Band ID cannot be empty" << std::endl;
+        return isValid;
     }
     if (event.creator_id().empty()) {
-        throw std::runtime_error("Creator ID cannot be empty");
+        std::cerr << "Creator ID cannot be empty" << std::endl;
+        return isValid;
     }
     if (event.name().empty()) {
-        throw std::runtime_error("Name cannot be empty");
+        std::cerr << "Name cannot be empty" << std::endl;
+        return isValid;
     }
     if (event.date() <= 0) {
-        throw std::runtime_error("Date must be positive");
+        std::cerr << "Date must be positive" << std::endl;
+        return isValid;
     }
     if (event.price() < 0) {
-        throw std::runtime_error("Price cannot be negative");
+        std::cerr << "Price cannot be negative" << std::endl;
+        return isValid;
     }
     if (event.capacity() <= 0) {
-        throw std::runtime_error("Capacity must be positive");
+        std::cerr << "Capacity must be positive" << std::endl;
+        return isValid;
     }
     if (event.sold() < 0) {
-        throw std::runtime_error("Sold tickets cannot be negative");
+        std::cerr << "Sold tickets cannot be negative" << std::endl;
+        return isValid;
     }
 
     indiepub::EventByVenue existingEvent = getEventById(event.event_id());
     if (existingEvent.event_id() == event.event_id()) {
-        throw std::runtime_error("Event with this ID already exists");
+        std::cerr << "Event with this ID already exists" << std::endl;
+        return isValid;
     }
     
     indiepub::EventByVenue existingEventByNameAndVenue = getEventBy(event.name(), event.venue_id());
     if (existingEventByNameAndVenue.event_id() == event.event_id()) {
-        throw std::runtime_error("Event with this name and venue already exists");
+        std::cerr << "Event with this name and venue already exists" << std::endl;
+        return isValid;
     }
 
     if (!isConnected()) {
-        throw std::runtime_error("Not connected to Cassandra");
+        std::cerr << "Not connected to Cassandra" << std::endl;
+        return isValid;
     }
 
     std::string query = "INSERT INTO " + this->keyspace_ + "." + EventByVenue::COLUMN_FAMILY + 
@@ -60,16 +73,16 @@ void indiepub::EventController::insertEvent(const indiepub::EventByVenue &event)
     CassUuid band_id;
     CassUuid creator_id;
     if (cass_uuid_from_string(event.venue_id().c_str(), &venue_id) != CASS_OK) {
-        throw std::runtime_error("Invalid UUID string: " + event.venue_id());
+        std::cerr << "Invalid UUID string: " + event.venue_id() << std::endl;
     }
     if (cass_uuid_from_string(event.event_id().c_str(), &event_id) != CASS_OK) {
-        throw std::runtime_error("Invalid UUID string: " + event.event_id());
+        std::cerr << "Invalid UUID string: " + event.event_id() << std::endl;
     }
     if (cass_uuid_from_string(event.band_id().c_str(), &band_id) != CASS_OK) {
-        throw std::runtime_error("Invalid UUID string: " + event.band_id());
+        std::cerr << "Invalid UUID string: " + event.band_id() << std::endl;
     }
     if (cass_uuid_from_string(event.creator_id().c_str(), &creator_id) != CASS_OK) {
-        throw std::runtime_error("Invalid UUID string: " + event.creator_id());
+        std::cerr << "Invalid UUID string: " + event.creator_id() << std::endl;
     }
     cass_statement_bind_uuid(statement, 0, venue_id);
     cass_statement_bind_int64(statement, 1, event.date());
@@ -90,13 +103,15 @@ void indiepub::EventController::insertEvent(const indiepub::EventByVenue &event)
         cass_future_error_message(query_future, &message, &message_length);
         std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
         std::string error_message = "Query execution failed: " + std::string(message, message_length);
-        throw std::runtime_error(error_message);
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << error_message << std::endl;
     } else {
         std::cout << "Query executed successfully." << std::endl;
+        isValid = true;
     }
     
     cass_statement_free(statement);
     cass_future_free(query_future);
+    return isValid;
 }
 
 std::vector<indiepub::EventByVenue> indiepub::EventController::getAllEvents() {
@@ -118,7 +133,10 @@ std::vector<indiepub::EventByVenue> indiepub::EventController::getAllEvents() {
         cass_iterator_free(iterator);
         cass_result_free(result);
     } else {
-        throw std::runtime_error("Failed to execute query");
+        const char *message;
+        size_t message_length;
+        cass_future_error_message(query_future, &message, &message_length);
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
@@ -131,55 +149,61 @@ indiepub::EventByVenue indiepub::EventController::getEventById(const std::string
     CassStatement *statement = cass_statement_new(query.c_str(), 1);
     CassUuid uuid;
     if (cass_uuid_from_string(event_id.c_str(), &uuid) != CASS_OK) {
-        throw std::runtime_error("Invalid UUID string: " + event_id);
+        std::cerr << "Invalid UUID string: " + event_id << std::endl;
     }
     cass_statement_bind_uuid(statement, 0, uuid);
 
     CassFuture *query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
+    indiepub::EventByVenue event;
     if (cass_future_error_code(query_future) == CASS_OK) {
         const CassResult *result = cass_future_get_result(query_future);
         if (cass_result_row_count(result) > 0) {
             const CassRow *row = cass_iterator_get_row(cass_iterator_from_result(result));
-            indiepub::EventByVenue event = indiepub::EventByVenue::from_row(row);
-            cass_result_free(result);
-            return event;
-        } else {
-            throw std::runtime_error("No event found with the given ID");
-        }
+            event = indiepub::EventByVenue::from_row(row);
+        } 
+        cass_result_free(result);
     } else {
-        throw std::runtime_error("Failed to execute query");
+        const char *message;
+        size_t message_length;
+        cass_future_error_message(query_future, &message, &message_length);
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
     // If we reach here, it means the event was not found
-    throw std::runtime_error("Event not found");
+    return event;
 }
 
-indiepub::EventByVenue indiepub::EventController::getEventBy(const std::string &name, const std::string &location) {
-    std::string query = "SELECT * FROM " + this->keyspace_ + "." + EventByVenue::COLUMN_FAMILY + " WHERE name = ? AND location = ?";
+indiepub::EventByVenue indiepub::EventController::getEventBy(const std::string &name, const std::string &venue_id) {
+    std::string query = "SELECT * FROM " + this->keyspace_ + "." + EventByVenue::COLUMN_FAMILY + " WHERE name = ? AND venue_id = ? ALLOW FILTERING";
     CassStatement *statement = cass_statement_new(query.c_str(), 2);
     cass_statement_bind_string(statement, 0, name.c_str());
-    cass_statement_bind_string(statement, 1, location.c_str());
+    CassUuid uuid;
+    if (cass_uuid_from_string(venue_id.c_str(), &uuid) != CASS_OK) {
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Invalid UUID string: " + venue_id << std::endl;
+    }
+    cass_statement_bind_uuid(statement, 1, uuid);
 
     CassFuture *query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
+    indiepub::EventByVenue event;
     if (cass_future_error_code(query_future) == CASS_OK) {
         const CassResult *result = cass_future_get_result(query_future);
         if (cass_result_row_count(result) > 0) {
             const CassRow *row = cass_iterator_get_row(cass_iterator_from_result(result));
-            indiepub::EventByVenue event = indiepub::EventByVenue::from_row(row);
-            cass_result_free(result);
-            return event;
-        } else {
-            throw std::runtime_error("No event found with the given name and location");
+            event = indiepub::EventByVenue::from_row(row);
         }
+        cass_result_free(result);
     } else {
-        throw std::runtime_error("Failed to execute query");
+        const char *message;
+        size_t message_length;
+        cass_future_error_message(query_future, &message, &message_length);
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
     // If we reach here, it means the event was not found
-    throw std::runtime_error("Event not found");
+    return event;
 }
 

@@ -15,47 +15,47 @@ bool indiepub::UsersController::insertUser(const indiepub::User &user)
     // Check if the user_id is a valid UUID
     if (user.user_id() == "")
     {
-        std::cerr << "User ID cannot be empty" << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "User ID cannot be empty" << std::endl;
         return isValid;
     }
     if (user.email().empty())
     {
-        std::cerr << "Email cannot be empty" << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "Email cannot be empty" << std::endl;
         return isValid;
     }
     if (user.role().empty())
     {
-        std::cerr << "Role cannot be empty" << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "Role cannot be empty" << std::endl;
         return isValid;
     }
     if (user.name().empty())
     {
-        std::cerr << "Name cannot be empty" << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "Name cannot be empty" << std::endl;
         return isValid;
     }
     if (user.created_at() <= 0)
     {
-        std::cerr << "Created at timestamp must be positive" << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "Created at timestamp must be positive" << std::endl;
         return isValid;
     }
 
     if (!isConnected())
     {
-        std::cerr << "Not connected to Cassandra" << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "Not connected to Cassandra" << std::endl;
         return isValid;
     }
 
     User _user = getUserByEmail(user.email()); // Check if user already exists
     if (_user.user_id() == user.user_id())
     {
-        std::cerr << "User with this ID already exists" << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "User with this ID already exists" << std::endl;
         return isValid;
     }
 
     _user = getUserBy(user.name(), user.email()); // Check if user already exists
     if (_user.name() == user.name() && _user.email() == user.email())
     {
-        std::cerr << "User with this name and email already exists" << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "User with this name and email already exists" << std::endl;
         return false;
     }
 
@@ -64,7 +64,7 @@ bool indiepub::UsersController::insertUser(const indiepub::User &user)
     CassUuid uuid;
     if (cass_uuid_from_string(user.user_id().c_str(), &uuid) != CASS_OK)
     {
-        std::cerr << "Invalid UUID string: " + user.user_id() << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "Invalid UUID string: " + user.user_id() << std::endl;
     }
     cass_statement_bind_uuid(statement, 0, uuid);
     cass_statement_bind_string(statement, 1, user.email().c_str());
@@ -80,9 +80,9 @@ bool indiepub::UsersController::insertUser(const indiepub::User &user)
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "Query execution failed: " << std::string(message, message_length) << std::endl;
         std::string error_message = "Query execution failed: " + std::string(message, message_length);
-        std::cerr << error_message << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << error_message << std::endl;
     }
     else
     {
@@ -122,7 +122,7 @@ std::vector<indiepub::User> indiepub::UsersController::getAllUsers()
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
@@ -157,7 +157,7 @@ indiepub::User indiepub::UsersController::getUserById(const std::string &user_id
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
@@ -188,7 +188,7 @@ indiepub::User indiepub::UsersController::getUserByEmail(const std::string &emai
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
@@ -220,7 +220,7 @@ indiepub::User indiepub::UsersController::getUserBy(const std::string &name, con
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : "  << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);

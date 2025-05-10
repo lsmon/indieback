@@ -44,16 +44,26 @@ indiepub::BandMember indiepub::BandMember::from_row(const CassRow *row)
         {
             throw std::runtime_error("Row is null");
         }
-        const char *band_id;
-        size_t band_id_length;
-        cass_value_get_string(cass_row_get_column(row, 0), &band_id, &band_id_length);
 
-        const char *user_id;
-        size_t user_id_length;
-        cass_value_get_string(cass_row_get_column(row, 1), &user_id, &user_id_length);
+        CassUuid band_id;
+        const CassValue *band_id_value = cass_row_get_column_by_name(row, "band_id");
+        if (cass_value_get_uuid(band_id_value, &band_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get band_id from row");
+        }
+        char band_id_str[CASS_UUID_STRING_LENGTH];
+        cass_uuid_string(band_id, band_id_str);
 
-        return BandMember(std::string(band_id, band_id_length),
-                          std::string(user_id, user_id_length));
+        CassUuid user_id;
+        const CassValue *user_id_value = cass_row_get_column_by_name(row, "user_id");
+        if (cass_value_get_uuid(user_id_value, &user_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get user_id from row");
+        }
+        char user_id_str[CASS_UUID_STRING_LENGTH];
+        cass_uuid_string(user_id, user_id_str);
+        
+        return BandMember(std::string(band_id_str, CASS_UUID_STRING_LENGTH - 1), std::string(user_id_str, CASS_UUID_STRING_LENGTH - 1));
     }
     catch (const std::exception &e)
     {

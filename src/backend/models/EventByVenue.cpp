@@ -104,47 +104,77 @@ indiepub::EventByVenue indiepub::EventByVenue::from_row(const CassRow *row)
         {
             throw std::runtime_error("Row is null");
         }
-        const char *event_id;
-        size_t event_id_length;
-        cass_value_get_string(cass_row_get_column(row, 0), &event_id, &event_id_length);
 
-        const char *venue_id;
-        size_t venue_id_length;
-        cass_value_get_string(cass_row_get_column(row, 1), &venue_id, &venue_id_length);
-
-        const char *band_id;
-        size_t band_id_length;
-        cass_value_get_string(cass_row_get_column(row, 2), &band_id, &band_id_length);
-
-        const char *creator_id;
-        size_t creator_id_length;
-        cass_value_get_string(cass_row_get_column(row, 3), &creator_id, &creator_id_length);
-
+        CassUuid event_id;
+        const CassValue *event_id_value = cass_row_get_column_by_name(row, "event_id");
+        if (cass_value_get_uuid(event_id_value, &event_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get event_id from row");
+        }
+        char event_id_str[CASS_UUID_STRING_LENGTH];
+        cass_uuid_string(event_id, event_id_str);
+        CassUuid venue_id;
+        const CassValue *venue_id_value = cass_row_get_column_by_name(row, "venue_id");
+        if (cass_value_get_uuid(venue_id_value, &venue_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get venue_id from row");
+        }
+        char venue_id_str[CASS_UUID_STRING_LENGTH];
+        cass_uuid_string(venue_id, venue_id_str);
+        CassUuid band_id;
+        const CassValue *band_id_value = cass_row_get_column_by_name(row, "band_id");
+        if (cass_value_get_uuid(band_id_value, &band_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get band_id from row");
+        }
+        char band_id_str[CASS_UUID_STRING_LENGTH];
+        cass_uuid_string(band_id, band_id_str);
+        CassUuid creator_id;
+        const CassValue *creator_id_value = cass_row_get_column_by_name(row, "creator_id");
+        if (cass_value_get_uuid(creator_id_value, &creator_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get creator_id from row");
+        }
+        char creator_id_str[CASS_UUID_STRING_LENGTH];
+        cass_uuid_string(creator_id, creator_id_str);
+        const CassValue *name_value = cass_row_get_column_by_name(row, "name");
         const char *name;
         size_t name_length;
-        cass_value_get_string(cass_row_get_column(row, 4), &name, &name_length);
-
+        cass_value_get_string(name_value, &name, &name_length);
         cass_int64_t date;
-        cass_value_get_int64(cass_row_get_column(row, 5), &date);
+        const CassValue *date_value = cass_row_get_column_by_name(row, "date");
+        if (cass_value_get_int64(date_value, &date) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get date from row");
+        }
+        cass_double_t price;
+        const CassValue *price_value = cass_row_get_column_by_name(row, "price");
+        if (cass_value_get_double(price_value, &price) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get price from row");
+        }
+        cass_int32_t capacity;
+        const CassValue *capacity_value = cass_row_get_column_by_name(row, "capacity");
+        if (cass_value_get_int32(capacity_value, &capacity) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get capacity from row");
+        }
+        cass_int32_t sold;
+        const CassValue *sold_value = cass_row_get_column_by_name(row, "sold");
+        if (cass_value_get_int32(sold_value, &sold) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get sold from row");
+        }
 
-        double price;
-        cass_value_get_double(cass_row_get_column(row, 6), &price);
-
-        int capacity;
-        cass_value_get_int32(cass_row_get_column(row, 7), &capacity);
-
-        int sold;
-        cass_value_get_int32(cass_row_get_column(row, 8), &sold);
-
-        return EventByVenue(std::string(event_id, event_id_length),
-                            std::string(venue_id, venue_id_length),
-                            std::string(band_id, band_id_length),
-                            std::string(creator_id, creator_id_length),
+        return EventByVenue(std::string(event_id_str, CASS_UUID_STRING_LENGTH - 1),
+                            std::string(venue_id_str, CASS_UUID_STRING_LENGTH - 1),
+                            std::string(band_id_str, CASS_UUID_STRING_LENGTH - 1),
+                            std::string(creator_id_str, CASS_UUID_STRING_LENGTH - 1),
                             std::string(name, name_length),
-                            date,
-                            price,
-                            capacity,
-                            sold);
+                            static_cast<std::time_t>(date),
+                            static_cast<double>(price),
+                            static_cast<int>(capacity),
+                            static_cast<int>(sold));
     }
     catch (const std::exception &e)
     {

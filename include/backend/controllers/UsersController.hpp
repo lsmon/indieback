@@ -9,7 +9,6 @@ namespace indiepub {
 
     class UsersController : public CassandraConnection {
     public:
-        UsersController() = default;
         UsersController(const std::string& contact_points, const std::string& username, const std::string& password, const std::string& keyspace);
 
         bool insertUser(const indiepub::User& user);

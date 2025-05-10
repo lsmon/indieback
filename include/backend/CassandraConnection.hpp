@@ -12,6 +12,9 @@ private:
 protected:
     CassSession* session;
     std::string keyspace_;
+    std::string contact_points_;
+    std::string username_;
+    std::string password_;
     
 
 public:

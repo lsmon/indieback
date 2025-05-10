@@ -27,11 +27,14 @@
 #include <util/UUID.hpp>
 #include <cassert>
 
+
+std::string contact_points = "172.18.0.2";
+std::string username = "cassandra";
+std::string password = "cassandra";
+std::string keyspace = "indie_pub";
+
 void testCassandraConnection()
 {
-    std::string contact_points = "172.18.0.2";
-    std::string username = "cassandra";
-    std::string password = "cassandra";
     CassandraConnection cassandra(contact_points, username, password);
     if (!cassandra.isConnected())
     {
@@ -209,7 +212,7 @@ std::unique_ptr<indiepub::BandMember> bandMember = std::make_unique<indiepub::Ba
 std::unique_ptr<indiepub::DailyTicketSales> dailyTicketSales = std::make_unique<indiepub::DailyTicketSales>(UUID::random(), indiepub::timestamp_to_string(std::time(nullptr)), 100);
 
 void testUserModel()
-{    
+{
     std::cout << "User ID: " << user->user_id() << std::endl;
     std::cout << "Email: " << user->email() << std::endl;
     std::cout << "Role: " << user->role() << std::endl;
@@ -299,28 +302,74 @@ void testModels()
     testDailyTicketSalesModel();
 }
 
-std::string contact_points = "172.18.0.2";
-std::string username = "cassandra";
-std::string password = "cassandra";
-std::string keyspace = "indie_pub";
+
+std::unique_ptr<indiepub::User> venueOwnerUser1 = std::make_unique<indiepub::User>("9945b170-2d49-11f0-8702-bffe161c8334", "venue@indie.com", "venue", "John Doe", std::time(nullptr));
+std::unique_ptr<indiepub::User> bandMemberUser1 = std::make_unique<indiepub::User>("6fed5aa8-2d49-11f0-a36a-03043ead2f94", "band1@indie.com", "band", "Jane Smith", std::time(nullptr));
+std::unique_ptr<indiepub::User> bandMemberUser2 = std::make_unique<indiepub::User>("f70bab02-2d49-11f0-a061-b7b7187fa569", "band2@indie.com", "band", "John Doe", std::time(nullptr));
+std::unique_ptr<indiepub::User> bandMemberUser3 = std::make_unique<indiepub::User>("01183872-2d4a-11f0-9ce7-630453107384", "band3@indie.com", "band", "Larry Who", std::time(nullptr));
+std::unique_ptr<indiepub::User> fan = std::make_unique<indiepub::User>("0d1b2f4c-2d4a-11f0-8e3b-5f7c6e9a1a3f", "abc@def.com", "fan", "Fanatic Fan", std::time(nullptr));
+
+std::unique_ptr<indiepub::Venue> venueGrandHall = std::make_unique<indiepub::Venue>("49de7634-2d4a-11f0-a7b7-531dad9d3e7c", venueOwnerUser1->user_id(), "The Grand Hall", "123 Main St", 500, std::time(nullptr));
+
+std::unique_ptr<indiepub::Band> bandRHCP = std::make_unique<indiepub::Band>("752a6c94-2d4a-11f0-a77a-affd39b9a377", "The Rockers", "Rock", "A popular rock band", std::time(nullptr));
+
+std::unique_ptr<indiepub::EventByVenue> eventConcert = std::make_unique<indiepub::EventByVenue>("abf1ffe9-3d4f-d410-4fee-a59aff13b839", venueGrandHall->venue_id(), bandRHCP->band_id(), bandMemberUser1->user_id(), "Concert", std::time(nullptr), 50.0, 100, 10);
 
 void testUsersControllers()
 {
     try
     {
-        indiepub::UsersController usersController(contact_points, username, password, keyspace);
-        usersController.insertUser(*user);
-        std::cout << "User inserted successfully!" << std::endl;
 
+        indiepub::UsersController usersController(contact_points, username, password, keyspace);
+        if (usersController.insertUser(*venueOwnerUser1))
+        {
+            std::cout << "User inserted successfully!" << std::endl;
+        }
+        else
+        {
+            std::cerr << "Failed to insert user." << std::endl;
+        }
+        if (usersController.insertUser(*bandMemberUser1))
+        {
+            std::cout << "User inserted successfully!" << std::endl;
+        }
+        else
+        {
+            std::cerr << "Failed to insert user." << std::endl;
+        }
+        if (usersController.insertUser(*bandMemberUser2))
+        {
+            std::cout << "User inserted successfully!" << std::endl;
+        }
+        else
+        {
+            std::cerr << "Failed to insert user." << std::endl;
+        }
+        if (usersController.insertUser(*bandMemberUser3))
+        {
+            std::cout << "User inserted successfully!" << std::endl;
+        }
+        else
+        {
+            std::cerr << "Failed to insert user." << std::endl;
+        }
+        if (usersController.insertUser(*fan))
+        {
+            std::cout << "User inserted successfully!" << std::endl;
+        }
+        else
+        {
+            std::cerr << "Failed to insert user." << std::endl;
+        }
+        
+        std::cout << "All users:" << std::endl;
         for (auto u : usersController.getAllUsers())
         {
             std::cout << u.to_json() << std::endl;
         }
-        
-        std::cout << "User retrieved by email successfully!" << std::endl;
-        std::cout << usersController.getUserByEmail(user->email()).to_json() << std::endl;
-        std::cout << "User retrieved by ID successfully!" << std::endl;
-        std::cout << usersController.getUserById(user->user_id()).to_json() << std::endl;
+
+        std::cout << "User retrieved by email successfully!: " << usersController.getUserByEmail(venueOwnerUser1->email()).to_json() << std::endl;
+        std::cout << "User retrieved by ID successfully!: " << usersController.getUserById(fan->user_id()).to_json() << std::endl;
         assert(true);
     }
     catch (const std::exception &e)
@@ -336,16 +385,17 @@ void testVenuesControllers()
     try
     {
         indiepub::VenuesController venuesController(contact_points, username, password, keyspace);
-        venuesController.insertVenue(*venue);
-        std::cout << "Venue inserted successfully!" << std::endl;
-        for (auto v : venuesController.getAllVenues())
+        if (venuesController.insertVenue(*venueGrandHall))
         {
-            std::cout << v.to_json() << std::endl;
+            std::cout << "Venue inserted successfully!" << std::endl;
         }
-        std::cout << "Venue retrieved by ID successfully!" << std::endl;
-        std::cout << venuesController.getVenueById(venue->venue_id()).to_json() << std::endl;
-        std::cout << "Venue retrieved by name and location successfully!" << std::endl;
-        std::cout << venuesController.getVenueBy(venue->name(), venue->location()).to_json() << std::endl;
+        else
+        {
+            std::cerr << "Failed to insert venue." << std::endl;
+        }
+        
+        std::cout << "Venue retrieved by ID successfully!: " << venuesController.getVenueById(venue->venue_id()).to_json() << std::endl;
+        std::cout << "Venue retrieved by name and location successfully!: " << venuesController.getVenueBy(venue->name(), venue->location()).to_json() << std::endl;
         assert(true);
     }
     catch (const std::exception &e)
@@ -380,12 +430,13 @@ void testBandControllers()
         assert(false);
     }
 }
+
 void testEventControllers()
 {
     try
     {
         indiepub::EventController eventController(contact_points, username, password, keyspace);
-        eventController.insertEvent(*event);
+        eventController.insertEvent(*eventConcert);
         std::cout << "Event inserted successfully!" << std::endl;
         for (auto e : eventController.getAllEvents())
         {
@@ -409,7 +460,7 @@ void testTicketControllers()
     try
     {
         indiepub::TicketsByUserController ticketsController(contact_points, username, password, keyspace);
-        indiepub::TicketByUser ticketByUser(ticket->user_id(), ticket->ticket_id(), ticket->event_id(), ticket->purchase_date());
+        indiepub::TicketByUser ticketByUser("b6607f54-2d4b-11f0-8231-ebe1daeabbca", fan->user_id(), event->event_id(), std::time(nullptr));
         ticketsController.insertTicket(ticketByUser);
         std::cout << "Ticket inserted successfully!" << std::endl;
         for (auto t : ticketsController.getAllTickets())
@@ -437,6 +488,8 @@ void testPostControllers()
 {
     try
     {
+        std::unique_ptr<indiepub::PostsByDate> post = std::make_unique<indiepub::PostsByDate>("794d70f8-2d4c-11f0-a8cc-27ad1a325e35", fan->user_id(), "This is a test post", std::time(nullptr), "2025-5-09");
+
         indiepub::PostsByDateController postsController(contact_points, username, password, keyspace);
         postsController.insertPost(*post);
         std::cout << "Post inserted successfully!" << std::endl;
@@ -465,6 +518,10 @@ void testBandMemberControllers()
 {
     try
     {
+        std::unique_ptr<indiepub::BandMember> bandMember1 = std::make_unique<indiepub::BandMember>(band->band_id(), bandMemberUser1->user_id());
+        std::unique_ptr<indiepub::BandMember> bandMember2 = std::make_unique<indiepub::BandMember>(band->band_id(), bandMemberUser2->user_id());
+        std::unique_ptr<indiepub::BandMember> bandMember3 = std::make_unique<indiepub::BandMember>(band->band_id(), bandMemberUser3->user_id());
+
         indiepub::BandMembersController bandsController(contact_points, username, password, keyspace);
         bandsController.insertBandMember(*bandMember);
         std::cout << "Band member inserted successfully!" << std::endl;
@@ -498,6 +555,8 @@ void testDailyTicketSalesControllers()
 {
     try
     {
+        std::unique_ptr<indiepub::DailyTicketSales> dailyTicketSales = std::make_unique<indiepub::DailyTicketSales>(event->event_id(), indiepub::timestamp_to_string(std::time(nullptr)), 1);
+
         indiepub::DailyTicketSalesController dailyTicketSalesController(contact_points, username, password, keyspace);
         dailyTicketSalesController.insertDailyTicketSales(*dailyTicketSales);
         std::cout << "Daily ticket sales inserted successfully!" << std::endl;
