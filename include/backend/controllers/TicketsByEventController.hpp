@@ -11,7 +11,7 @@ namespace indiepub {
         TicketsByEventController() = default;
         TicketsByEventController(const std::string& contact_points, const std::string& username, const std::string& password, const std::string& keyspace);
 
-        void insertTicket(const indiepub::TicketByEvent& ticket);
+        bool insertTicket(const indiepub::TicketByEvent& ticket);
         std::vector<indiepub::TicketByEvent> getAllTickets();
         indiepub::TicketByEvent getTicketById(const std::string& ticket_id);
         std::vector<indiepub::TicketByEvent> getTicketsByUserId(const std::string& user_id);

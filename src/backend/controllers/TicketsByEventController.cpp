@@ -7,10 +7,8 @@
 indiepub::TicketsByEventController::TicketsByEventController(const std::string &contact_points, const std::string &username, const std::string &password, const std::string &keyspace) : CassandraConnection(contact_points, username, password, keyspace) {
 }
 
-void indiepub::TicketsByEventController::insertTicket(const indiepub::TicketByEvent &ticket) {
-    if (!isConnected()) {
-        throw std::runtime_error("Not connected to Cassandra");
-    }
+bool indiepub::TicketsByEventController::insertTicket(const indiepub::TicketByEvent &ticket) {
+    bool isValid = false;
 
     std::string query = "INSERT INTO " + this->keyspace_ + "." + indiepub::TicketByEvent::COLUMN_FAMILY +
                         " (event_id, ticket_id, user_id, date) VALUES (?, ?, ?, ?)";
@@ -35,17 +33,17 @@ void indiepub::TicketsByEventController::insertTicket(const indiepub::TicketByEv
     CassFuture *query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
     if (cass_future_error_code(query_future) != CASS_OK) {
-        const char* message;
+        const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
-        std::string error_message = "Query execution failed: " + std::string(message, message_length);
-        throw std::runtime_error(error_message);
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     } else {
-        std::cout << "Query executed successfully." << std::endl;
+        isValid = true;
+        std::cout << "Ticket inserted successfully." << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
+    return isValid;
 }
 
 std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getAllTickets() {
@@ -57,33 +55,33 @@ std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getAllT
     CassStatement *statement = cass_statement_new(query.c_str(), 0);
     CassFuture *query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
+    std::vector<indiepub::TicketByEvent> tickets;
+
     if (cass_future_error_code(query_future) == CASS_OK) {
         const CassResult *result = cass_future_get_result(query_future);
-        std::vector<indiepub::TicketByEvent> tickets;
+        
         CassIterator *iterator = cass_iterator_from_result(result);
 
         while (cass_iterator_next(iterator)) {
             const CassRow *row = cass_iterator_get_row(iterator);
-            tickets.emplace_back(indiepub::TicketByEvent::from_row(row));
+            tickets.push_back(indiepub::TicketByEvent::from_row(row));
         }
 
         cass_iterator_free(iterator);
         cass_result_free(result);
-        return tickets;
     } else {
-        throw std::runtime_error("Failed to execute query");
+        const char *message;
+        size_t message_length;
+        cass_future_error_message(query_future, &message, &message_length);
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
-    // If we reach here, it means no tickets were found
-    return std::vector<indiepub::TicketByEvent>(); // Return an empty vector in case of failure
+
+    return tickets;
 }
 
 indiepub::TicketByEvent indiepub::TicketsByEventController::getTicketById(const std::string &ticket_id) {
-    if (!isConnected()) {
-        throw std::runtime_error("Not connected to Cassandra");
-    }
-
     std::string query = "SELECT * FROM " + this->keyspace_ + "." + indiepub::TicketByEvent::COLUMN_FAMILY + " WHERE ticket_id = ?";
     CassStatement *statement = cass_statement_new(query.c_str(), 1);
     CassUuid uuid;
@@ -94,30 +92,27 @@ indiepub::TicketByEvent indiepub::TicketsByEventController::getTicketById(const 
 
     CassFuture *query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
+    indiepub::TicketByEvent ticket;
+
     if (cass_future_error_code(query_future) == CASS_OK) {
         const CassResult *result = cass_future_get_result(query_future);
         if (cass_result_row_count(result) > 0) {
             const CassRow *row = cass_iterator_get_row(cass_iterator_from_result(result));
-            indiepub::TicketByEvent ticket = indiepub::TicketByEvent::from_row(row);
-            cass_result_free(result);
-            return ticket;
-        } else {
-            throw std::runtime_error("No ticket found with the given ID");
+            ticket = indiepub::TicketByEvent::from_row(row);
         }
+        cass_result_free(result);
     } else {
-        throw std::runtime_error("Failed to execute query");
+        const char *message;
+        size_t message_length;
+        cass_future_error_message(query_future, &message, &message_length);
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
-    // If we reach here, it means the ticket was not found
-    return indiepub::TicketByEvent(); // Return an empty TicketByEvent object in case of failure
+    return ticket;
 }
 
 std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getTicketsByUserId(const std::string &user_id) {
-    if (!isConnected()) {
-        throw std::runtime_error("Not connected to Cassandra");
-    }
-
     std::string query = "SELECT * FROM " + this->keyspace_ + "." + indiepub::TicketByEvent::IDX_TICKETS_USER_ID + " WHERE user_id = ?";
     CassStatement *statement = cass_statement_new(query.c_str(), 1);
     CassUuid uuid;
@@ -128,26 +123,28 @@ std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getTick
 
     CassFuture *query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
+    std::vector<indiepub::TicketByEvent> tickets;
+
     if (cass_future_error_code(query_future) == CASS_OK) {
-        const CassResult *result = cass_future_get_result(query_future);
-        std::vector<indiepub::TicketByEvent> tickets;
+        const CassResult *result = cass_future_get_result(query_future);    
         CassIterator *iterator = cass_iterator_from_result(result);
 
         while (cass_iterator_next(iterator)) {
             const CassRow *row = cass_iterator_get_row(iterator);
-            tickets.emplace_back(indiepub::TicketByEvent::from_row(row));
+            tickets.push_back(indiepub::TicketByEvent::from_row(row));
         }
 
         cass_iterator_free(iterator);
         cass_result_free(result);
-        return tickets;
     } else {
-        throw std::runtime_error("Failed to execute query");
+        const char *message;
+        size_t message_length;
+        cass_future_error_message(query_future, &message, &message_length);
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
-    // If we reach here, it means the ticket was not found
-    return std::vector<indiepub::TicketByEvent>(); // Return an empty vector in case of failure
+    return tickets;
 }
 
 std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getTicketsByEventId(const std::string &event_id) {
@@ -165,11 +162,12 @@ std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getTick
 
     CassFuture *query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
+    std::vector<indiepub::TicketByEvent> tickets;
+
     if (cass_future_error_code(query_future) == CASS_OK) {
         const CassResult *result = cass_future_get_result(query_future);
-        std::vector<indiepub::TicketByEvent> tickets;
+        
         CassIterator *iterator = cass_iterator_from_result(result);
-
         while (cass_iterator_next(iterator)) {
             const CassRow *row = cass_iterator_get_row(iterator);
             tickets.emplace_back(indiepub::TicketByEvent::from_row(row));
@@ -177,12 +175,13 @@ std::vector<indiepub::TicketByEvent> indiepub::TicketsByEventController::getTick
 
         cass_iterator_free(iterator);
         cass_result_free(result);
-        return tickets;
     } else {
-        throw std::runtime_error("Failed to execute query");
+        const char *message;
+        size_t message_length;
+        cass_future_error_message(query_future, &message, &message_length);
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
-    // If we reach here, it means the ticket was not found
-    return std::vector<indiepub::TicketByEvent>(); // Return an empty vector in case of failure
+    return tickets;
 }

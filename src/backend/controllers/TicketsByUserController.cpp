@@ -86,9 +86,7 @@ bool indiepub::TicketsByUserController::insertTicket(const indiepub::TicketByUse
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
-        std::string error_message = "Query execution failed: " + std::string(message, message_length);
-        std::cerr << __FILE__ << ":" << __LINE__ << " : " << error_message << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     else
     {
@@ -115,7 +113,7 @@ std::vector<indiepub::TicketByUser> indiepub::TicketsByUserController::getAllTic
         while (cass_iterator_next(iterator))
         {
             const CassRow *row = cass_iterator_get_row(iterator);
-            tickets.emplace_back(indiepub::TicketByUser::from_row(row));
+            tickets.push_back(indiepub::TicketByUser::from_row(row));
         }
 
         cass_iterator_free(iterator);
@@ -127,9 +125,7 @@ std::vector<indiepub::TicketByUser> indiepub::TicketsByUserController::getAllTic
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
-        std::string error_message = "Query execution failed: " + std::string(message, message_length);
-        std::cerr << __FILE__ << ":" << __LINE__ << " : " << error_message << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
@@ -167,9 +163,7 @@ indiepub::TicketByUser indiepub::TicketsByUserController::getTicketById(const st
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
-        std::string error_message = "Query execution failed: " + std::string(message, message_length);
-        std::cerr << __FILE__ << ":" << __LINE__ << " : " << error_message << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
@@ -205,7 +199,7 @@ std::vector<indiepub::TicketByUser> indiepub::TicketsByUserController::getTicket
         while (cass_iterator_next(iterator))
         {
             const CassRow *row = cass_iterator_get_row(iterator);
-            tickets.emplace_back(indiepub::TicketByUser::from_row(row));
+            tickets.push_back(indiepub::TicketByUser::from_row(row));
         }
 
         cass_iterator_free(iterator);
@@ -216,9 +210,7 @@ std::vector<indiepub::TicketByUser> indiepub::TicketsByUserController::getTicket
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
-        std::string error_message = "Query execution failed: " + std::string(message, message_length);
-        std::cerr << __FILE__ << ":" << __LINE__ << " : " << error_message << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);

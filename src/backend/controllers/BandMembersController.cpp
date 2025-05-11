@@ -74,9 +74,7 @@ bool indiepub::BandMembersController::insertBandMember(const indiepub::BandMembe
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
-        std::string error_message = "Query execution failed: " + std::string(message, message_length);
-        std::cerr << error_message << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
@@ -107,15 +105,15 @@ std::vector<indiepub::BandMember> indiepub::BandMembersController::getAllBandMem
     }
     else
     {
-        const char *message;
+const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
-    // If we reach here, it means no band members were found
-    return band_members; // Return an empty vector in case of failure
+    
+    return band_members;
 }
 
 indiepub::BandMember indiepub::BandMembersController::getBandMemberById(const std::string &band_id, const std::string &user_id)
@@ -153,12 +151,11 @@ indiepub::BandMember indiepub::BandMembersController::getBandMemberById(const st
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
-    // If we reach here, it means the band member was not found
-    return band_member; // Return an empty BandMember object in case of failure
+    return band_member;
 }
 
 std::vector<indiepub::BandMember> indiepub::BandMembersController::getBandMembersByBandId(const std::string &band_id)
@@ -186,7 +183,6 @@ std::vector<indiepub::BandMember> indiepub::BandMembersController::getBandMember
             const CassRow *row = cass_iterator_get_row(iterator);
             band_members.push_back(indiepub::BandMember::from_row(row));
         }
-
         cass_iterator_free(iterator);
         cass_result_free(result);
     }
@@ -195,9 +191,9 @@ std::vector<indiepub::BandMember> indiepub::BandMembersController::getBandMember
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
-    return band_members; // Return an empty vector in case of failure
+    return band_members; 
 }
