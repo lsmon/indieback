@@ -1,5 +1,6 @@
 #include <backend/controllers/TicketsByUserController.hpp>
 #include <backend/models/TicketByUser.hpp>
+#include <backend/models/TicketByEvent.hpp>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -37,13 +38,22 @@ bool indiepub::TicketsByUserController::insertTicket(const indiepub::TicketByUse
         return isValid;
     }
 
-    if (userController->getUserById(ticket.user_id()).user_id() != ticket.user_id())
+    indiepub::TicketByUser existingTicket = getTicketById(ticket.ticket_id()); // Check if ticket already exists
+    if (existingTicket.ticket_id() == ticket.ticket_id())
+    {
+        std::cerr << "Ticket with this ID already exists" << std::endl;
+        return isValid;
+    }
+
+    indiepub::User _user = userController->getUserById(ticket.user_id()); // Check if user exists
+    if (_user.user_id() != ticket.user_id())
     {
         std::cerr << "User with this ID does not exist" << std::endl;
         return isValid;
     }
 
-    if (eventController->getEventById(ticket.event_id()).event_id() != ticket.event_id())
+    indiepub::EventByVenue _event = eventController->getEventById(ticket.event_id()); // Check if event exists
+    if (_event.event_id() != ticket.event_id())
     {
         std::cerr << "Event with this ID does not exist" << std::endl;
         return isValid;
@@ -55,9 +65,9 @@ bool indiepub::TicketsByUserController::insertTicket(const indiepub::TicketByUse
         return isValid;
     }
 
-    std::string query = "INSERT INTO " + this->keyspace_ + "." + indiepub::TicketByUser::COLUMN_FAMILY +
+    std::string query = "INSERT INTO " + this->keyspace_ + "." + TicketByUser::COLUMN_FAMILY +
                         " (user_id, ticket_id, event_id, purchase_date) VALUES (?, ?, ?, ?)";
-    CassStatement *statement = cass_statement_new(query.c_str(), 5);
+    CassStatement *statement = cass_statement_new(query.c_str(), 4);
     CassUuid user_id;
     CassUuid ticket_id;
     CassUuid event_id;
@@ -100,7 +110,7 @@ bool indiepub::TicketsByUserController::insertTicket(const indiepub::TicketByUse
 
 std::vector<indiepub::TicketByUser> indiepub::TicketsByUserController::getAllTickets()
 {
-    std::string query = "SELECT * FROM " + this->keyspace_ + "." + indiepub::TicketByUser::COLUMN_FAMILY;
+    std::string query = "SELECT * FROM " + this->keyspace_ + "." + TicketByUser::COLUMN_FAMILY;
     CassStatement *statement = cass_statement_new(query.c_str(), 0);
     CassFuture *query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
@@ -134,7 +144,7 @@ std::vector<indiepub::TicketByUser> indiepub::TicketsByUserController::getAllTic
 
 indiepub::TicketByUser indiepub::TicketsByUserController::getTicketById(const std::string &ticket_id)
 {
-    std::string query = "SELECT * FROM " + this->keyspace_ + "." + indiepub::TicketByUser::COLUMN_FAMILY + " WHERE ticket_id = ?";
+    std::string query = "SELECT * FROM " + this->keyspace_ + "." + TicketByUser::COLUMN_FAMILY + " WHERE ticket_id = ? ALLOW FILTERING";
     CassStatement *statement = cass_statement_new(query.c_str(), 1);
     indiepub::TicketByUser ticket;
     CassUuid uuid;
@@ -152,7 +162,7 @@ indiepub::TicketByUser indiepub::TicketsByUserController::getTicketById(const st
         const CassResult *result = cass_future_get_result(query_future);
         if (cass_result_row_count(result) > 0)
         {
-            const CassRow *row = cass_iterator_get_row(cass_iterator_from_result(result));
+            const CassRow *row = cass_result_first_row(result);
             ticket = indiepub::TicketByUser::from_row(row);
         }
         cass_iterator_free(cass_iterator_from_result(result));
@@ -177,7 +187,7 @@ std::vector<indiepub::TicketByUser> indiepub::TicketsByUserController::getTicket
         throw std::runtime_error("Not connected to Cassandra");
     }
 
-    std::string query = "SELECT * FROM " + this->keyspace_ + "." + indiepub::TicketByUser::IDX_TICKETS_EVENT_ID + " WHERE user_id = ?";
+    std::string query = "SELECT * FROM " + this->keyspace_ + "." + TicketByUser::COLUMN_FAMILY + " WHERE user_id = ?";
     CassStatement *statement = cass_statement_new(query.c_str(), 1);
     std::vector<indiepub::TicketByUser> tickets;
     CassUuid uuid;

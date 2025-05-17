@@ -19,6 +19,7 @@ namespace indiepub
 
         static const std::string COLUMN_FAMILY;
         
+        static const std::string IDX_EVENTS_EVENT_ID;
         static const std::string IDX_EVENTS_BAND_ID;
         static const std::string IDX_EVENTS_CAPACITY;
         static const std::string IDX_EVENTS_CREATOR_ID;

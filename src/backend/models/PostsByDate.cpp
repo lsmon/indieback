@@ -9,9 +9,9 @@ const std::string indiepub::PostsByDate::IDX_POSTS_USER_ID = "user_id";
 const std::string indiepub::PostsByDate::IDX_POSTS_CONTENT = "content";
 
 indiepub::PostsByDate::PostsByDate(const std::string &post_id, const std::string &user_id,
-                     const std::string &content, std::time_t created_at, const std::string &date)
+                     const std::string &content, std::time_t created_at)
     : post_id_(post_id), user_id_(user_id), content_(content),
-      created_at_(created_at), date_(date) {}
+      created_at_(created_at) {}
 
 std::string indiepub::PostsByDate::post_id() const
 {
@@ -33,11 +33,6 @@ std::time_t indiepub::PostsByDate::created_at() const
     return created_at_;
 }
 
-std::string indiepub::PostsByDate::date() const
-{
-    return date_;
-}
-
 std::string indiepub::PostsByDate::to_json() const
 {
     std::unique_ptr<JSONObject> json = std::make_unique<JSONObject>();
@@ -45,7 +40,6 @@ std::string indiepub::PostsByDate::to_json() const
     json->put("user_id", user_id_);
     json->put("content", content_);
     json->put("created_at", timestamp_to_string(created_at_));
-    json->put("date", date_);
     return json->str();
 }
 
@@ -57,7 +51,6 @@ indiepub::PostsByDate indiepub::PostsByDate::from_json(const std::string &json)
     post.user_id_ = jsonObject->get("user_id").str();
     post.content_ = jsonObject->get("content").str();
     post.created_at_ = string_to_timestamp(jsonObject->get("created_at").str());
-    post.date_ = jsonObject->get("date").str();
     return post;
 }
 
@@ -69,30 +62,38 @@ indiepub::PostsByDate indiepub::PostsByDate::from_row(const CassRow *row)
         {
             throw std::runtime_error("Row is null");
         }
-        const char *post_id;
-        size_t post_id_length;
-        cass_value_get_string(cass_row_get_column(row, 0), &post_id, &post_id_length);
+        CassUuid post_id;
+        const CassValue *post_id_value = cass_row_get_column_by_name(row, "post_id");
+        if (cass_value_get_uuid(post_id_value, &post_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get post_id from row");
+        }
+        char post_id_str[CASS_UUID_STRING_LENGTH];
+        cass_uuid_string(post_id, post_id_str);
 
-        const char *user_id;
-        size_t user_id_length;
-        cass_value_get_string(cass_row_get_column(row, 1), &user_id, &user_id_length);
+        CassUuid user_id;
+        const CassValue *user_id_value = cass_row_get_column_by_name(row, "user_id");
+        if (cass_value_get_uuid(user_id_value, &user_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get user_id from row");
+        }
+        char user_id_str[CASS_UUID_STRING_LENGTH];
+        cass_uuid_string(user_id, user_id_str);
 
+        const CassValue *content_value = cass_row_get_column_by_name(row, "content");
         const char *content;
         size_t content_length;
-        cass_value_get_string(cass_row_get_column(row, 2), &content, &content_length);
-
+        cass_value_get_string(content_value, &content, &content_length);
+        
+        const CassValue *created_at_value = cass_row_get_column_by_name(row, "created_at");
         cass_int64_t created_at;
-        cass_value_get_int64(cass_row_get_column(row, 3), &created_at);
-
-        const char *date;
-        size_t date_length;
-        cass_value_get_string(cass_row_get_column(row, 4), &date, &date_length);
-
-        return PostsByDate(std::string(post_id, post_id_length),
-                    std::string(user_id, user_id_length),
-                    std::string(content, content_length),
-                    created_at,
-                    std::string(date, date_length));
+        if (cass_value_get_int64(created_at_value, &created_at) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get created_at from row");
+        }
+        
+        return PostsByDate(std::string(post_id_str), std::string(user_id_str),
+                           std::string(content, content_length), created_at);
     }
     catch (const std::exception &e)
     {

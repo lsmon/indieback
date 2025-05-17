@@ -5,6 +5,7 @@
 #include <memory>
 
 const std::string indiepub::EventByVenue::COLUMN_FAMILY = "events_by_venue";
+const std::string indiepub::EventByVenue::IDX_EVENTS_EVENT_ID = "event_id";
 const std::string indiepub::EventByVenue::IDX_EVENTS_BAND_ID = "band_id";
 const std::string indiepub::EventByVenue::IDX_EVENTS_CAPACITY = "capacity";
 const std::string indiepub::EventByVenue::IDX_EVENTS_CREATOR_ID = "creator_id";

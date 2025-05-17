@@ -62,25 +62,44 @@ indiepub::TicketByEvent indiepub::TicketByEvent::from_row(const CassRow *row)
         {
             throw std::runtime_error("Row is null");
         }
-        const char *ticket_id;
-        size_t ticket_id_length;
-        cass_value_get_string(cass_row_get_column(row, 0), &ticket_id, &ticket_id_length);
+        
+        CassUuid event_id;
+        const CassValue *event_id_value = cass_row_get_column_by_name(row, "event_id");
+        if (cass_value_get_uuid(event_id_value, &event_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get event_id from row");
+        }
+        char event_id_str[CASS_UUID_STRING_LENGTH];
+        cass_uuid_string(event_id, event_id_str);
 
-        const char *user_id;
-        size_t user_id_length;
-        cass_value_get_string(cass_row_get_column(row, 1), &user_id, &user_id_length);
+        CassUuid ticket_id;
+        const CassValue *ticket_id_value = cass_row_get_column_by_name(row, "ticket_id");
+        if (cass_value_get_uuid(ticket_id_value, &ticket_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get ticket_id from row");
+        }
+        char ticket_id_str[CASS_UUID_STRING_LENGTH];
+        cass_uuid_string(ticket_id, ticket_id_str);
 
-        const char *event_id;
-        size_t event_id_length;
-        cass_value_get_string(cass_row_get_column(row, 2), &event_id, &event_id_length);
+        CassUuid user_id;
+        const CassValue *user_id_value = cass_row_get_column_by_name(row, "user_id");
+        if (cass_value_get_uuid(user_id_value, &user_id) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get user_id from row");
+        }
+        char user_id_str[CASS_UUID_STRING_LENGTH];
+        cass_uuid_string(user_id, user_id_str);
 
         cass_int64_t purchase_date;
-        cass_value_get_int64(cass_row_get_column(row, 3), &purchase_date);
-
-        return TicketByEvent(std::string(ticket_id, ticket_id_length),
-                      std::string(user_id, user_id_length),
-                      std::string(event_id, event_id_length),
-                      purchase_date);
+        const CassValue *purchase_date_value = cass_row_get_column_by_name(row, "purchase_date");
+        if (cass_value_get_int64(purchase_date_value, &purchase_date) != CASS_OK)
+        {
+            throw std::runtime_error("Failed to get purchase_date from row");
+        }
+        return TicketByEvent(std::string(ticket_id_str, CASS_UUID_STRING_LENGTH - 1),
+                             std::string(user_id_str, CASS_UUID_STRING_LENGTH - 1),
+                             std::string(event_id_str, CASS_UUID_STRING_LENGTH - 1),
+                             static_cast<std::time_t>(purchase_date));
     }
     catch (const std::exception &e)
     {

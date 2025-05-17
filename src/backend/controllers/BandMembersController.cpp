@@ -141,7 +141,7 @@ indiepub::BandMember indiepub::BandMembersController::getBandMemberById(const st
         const CassResult *result = cass_future_get_result(query_future);
         if (cass_result_row_count(result) > 0)
         {
-            const CassRow *row = cass_iterator_get_row(cass_iterator_from_result(result));
+            const CassRow *row = cass_result_first_row(result);
             band_member = indiepub::BandMember::from_row(row);
         }
         cass_result_free(result);
@@ -196,4 +196,42 @@ std::vector<indiepub::BandMember> indiepub::BandMembersController::getBandMember
     cass_statement_free(statement);
     cass_future_free(query_future);
     return band_members; 
+}
+
+indiepub::BandMember indiepub::BandMembersController::getBandMemberByUserId(const std::string &user_id)
+{
+    std::string query = "SELECT * FROM " + this->keyspace_ + "." + BandMember::COLUMN_FAMILY + " WHERE user_id = ? ALLOW FILTERING";
+    CassStatement *statement = cass_statement_new(query.c_str(), 1);
+    CassUuid user_uuid;
+    indiepub::BandMember band_member;
+    if (cass_uuid_from_string(user_id.c_str(), &user_uuid) != CASS_OK)
+    {
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "UUID string: " + user_id << std::endl;
+        return band_member;
+    }
+    cass_statement_bind_uuid(statement, 0, user_uuid);
+
+    CassFuture *query_future = cass_session_execute(session, statement);
+    cass_future_wait(query_future);
+    
+    if (cass_future_error_code(query_future) == CASS_OK)
+    {
+        const CassResult *result = cass_future_get_result(query_future);
+        if (cass_result_row_count(result) > 0)
+        {
+            const CassRow *row = cass_result_first_row(result);
+            band_member = indiepub::BandMember::from_row(row);
+        }
+        cass_result_free(result);
+    }
+    else
+    {
+        const char *message;
+        size_t message_length;
+        cass_future_error_message(query_future, &message, &message_length);
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
+    }
+    cass_statement_free(statement);
+    cass_future_free(query_future);
+    return band_member; 
 }

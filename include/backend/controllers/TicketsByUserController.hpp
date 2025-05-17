@@ -5,6 +5,7 @@
 #include <backend/models/TicketByUser.hpp>
 #include <backend/controllers/EventController.hpp>
 #include <backend/controllers/UsersController.hpp>
+#include <backend/controllers/TicketsByEventController.hpp>
 #include <memory>
 
 namespace indiepub {
@@ -23,6 +24,7 @@ namespace indiepub {
         // Add any private members or methods if needed
         std::shared_ptr<UsersController> userController;
         std::shared_ptr<EventController> eventController;
+        std::shared_ptr<TicketsByEventController> ticketsByEventController;
     };
 }
 

@@ -3,6 +3,9 @@
 
 #include <backend/CassandraConnection.hpp>
 #include <backend/models/TicketByEvent.hpp>
+#include <backend/controllers/EventController.hpp>
+#include <backend/controllers/UsersController.hpp>
+#include <memory>
 
 namespace indiepub {
 
@@ -19,6 +22,8 @@ namespace indiepub {
 
     private:
         // Add any private members or methods if needed
+        std::shared_ptr<indiepub::UsersController> userController;
+        std::shared_ptr<indiepub::EventController> eventController;
     };
 }
 

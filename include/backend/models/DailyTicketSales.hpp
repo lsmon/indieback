@@ -13,13 +13,13 @@ namespace indiepub
     {
     public:
         DailyTicketSales() = default;
-        DailyTicketSales(const std::string &event_id, const std::string &sale_date, int tickets_sold);
+        DailyTicketSales(const std::string &event_id, std::time_t sale_date, int tickets_sold);
 
         static const std::string COLUMN_FAMILY;
 
         // Getters
         std::string event_id() const;
-        std::string sale_date() const; // YYYY-MM-DD
+        std::time_t sale_date() const; // YYYY-MM-DD
         int tickets_sold() const;
 
         // JSON serialization
@@ -30,7 +30,7 @@ namespace indiepub
 
     private:
         std::string event_id_;  // UUID
-        std::string sale_date_; // YYYY-MM-DD
+        std::time_t sale_date_; // YYYY-MM-DD
         int tickets_sold_;      // Counter
     };
 }

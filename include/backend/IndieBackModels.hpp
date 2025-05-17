@@ -14,6 +14,7 @@ namespace indiepub {
 
     // Helper function to parse ISO 8601 string to timestamp
     std::time_t string_to_timestamp(const std::string& str);
+    
 
 } // namespace indiepub
 

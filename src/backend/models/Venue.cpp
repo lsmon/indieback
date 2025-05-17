@@ -85,7 +85,7 @@ indiepub::Venue indiepub::Venue::from_row(const CassRow *row)
         {
             throw std::runtime_error("Failed to get venue_id from row");
         }
-        char venue_id_str[37];
+        char venue_id_str[CASS_UUID_STRING_LENGTH];
         cass_uuid_string(venue_id, venue_id_str);
 
         // Extract owner_id (UUID)
@@ -95,7 +95,7 @@ indiepub::Venue indiepub::Venue::from_row(const CassRow *row)
         {
             throw std::runtime_error("Failed to get owner_id from row");
         }
-        char owner_id_str[37];
+        char owner_id_str[CASS_UUID_STRING_LENGTH];
         cass_uuid_string(owner_id, owner_id_str);
 
         // Extract name

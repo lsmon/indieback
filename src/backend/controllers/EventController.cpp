@@ -145,21 +145,23 @@ std::vector<indiepub::EventByVenue> indiepub::EventController::getAllEvents() {
 }
 
 indiepub::EventByVenue indiepub::EventController::getEventById(const std::string &event_id) {
-    std::string query = "SELECT * FROM " + this->keyspace_ + "." + EventByVenue::COLUMN_FAMILY + " WHERE event_id = ?";
+    std::string query = "SELECT * FROM " + this->keyspace_ + "." + EventByVenue::COLUMN_FAMILY + " WHERE event_id = ? ALLOW FILTERING";
     CassStatement *statement = cass_statement_new(query.c_str(), 1);
     CassUuid uuid;
+    indiepub::EventByVenue event;
+
     if (cass_uuid_from_string(event_id.c_str(), &uuid) != CASS_OK) {
-        std::cerr << "Invalid UUID string: " + event_id << std::endl;
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Invalid UUID string: " + event_id << std::endl;
+        return event; // Return an empty Event object in case of failure
     }
     cass_statement_bind_uuid(statement, 0, uuid);
 
     CassFuture *query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
-    indiepub::EventByVenue event;
     if (cass_future_error_code(query_future) == CASS_OK) {
         const CassResult *result = cass_future_get_result(query_future);
         if (cass_result_row_count(result) > 0) {
-            const CassRow *row = cass_iterator_get_row(cass_iterator_from_result(result));
+            const CassRow *row = cass_result_first_row(result);
             event = indiepub::EventByVenue::from_row(row);
         } 
         cass_result_free(result);
@@ -176,22 +178,25 @@ indiepub::EventByVenue indiepub::EventController::getEventById(const std::string
 }
 
 indiepub::EventByVenue indiepub::EventController::getEventBy(const std::string &name, const std::string &venue_id) {
-    std::string query = "SELECT * FROM " + this->keyspace_ + "." + EventByVenue::COLUMN_FAMILY + " WHERE name = ? AND venue_id = ? ALLOW FILTERING";
+    std::string query = "SELECT * FROM " + this->keyspace_ + "." + EventByVenue::COLUMN_FAMILY + " WHERE venue_id = ? AND name = ? ALLOW FILTERING";
     CassStatement *statement = cass_statement_new(query.c_str(), 2);
-    cass_statement_bind_string(statement, 0, name.c_str());
     CassUuid uuid;
+    indiepub::EventByVenue event;
+
     if (cass_uuid_from_string(venue_id.c_str(), &uuid) != CASS_OK) {
         std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Invalid UUID string: " + venue_id << std::endl;
+        return event; // Return an empty Event object in case of failure
     }
-    cass_statement_bind_uuid(statement, 1, uuid);
+    cass_statement_bind_uuid(statement, 0, uuid);
+    cass_statement_bind_string(statement, 1, name.c_str());
 
     CassFuture *query_future = cass_session_execute(session, statement);
     cass_future_wait(query_future);
-    indiepub::EventByVenue event;
+    
     if (cass_future_error_code(query_future) == CASS_OK) {
         const CassResult *result = cass_future_get_result(query_future);
         if (cass_result_row_count(result) > 0) {
-            const CassRow *row = cass_iterator_get_row(cass_iterator_from_result(result));
+            const CassRow *row = cass_result_first_row(result);
             event = indiepub::EventByVenue::from_row(row);
         }
         cass_result_free(result);

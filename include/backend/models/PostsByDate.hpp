@@ -14,7 +14,7 @@ namespace indiepub
     public:
         PostsByDate() = default;
         PostsByDate(const std::string &post_id, const std::string &user_id, const std::string &content,
-             std::time_t created_at, const std::string &date);
+             std::time_t created_at);
 
         static const std::string COLUMN_FAMILY;
         static const std::string IDX_POSTS_USER_ID;
@@ -25,8 +25,7 @@ namespace indiepub
         std::string user_id() const;
         std::string content() const;
         std::time_t created_at() const;
-        std::string date() const; // Date as YYYY-MM-DD
-
+        
         // JSON serialization
         std::string to_json() const;
 
@@ -38,7 +37,6 @@ namespace indiepub
         std::string user_id_; // UUID
         std::string content_;
         std::time_t created_at_;
-        std::string date_; // YYYY-MM-DD
     };
 }
 

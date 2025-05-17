@@ -18,6 +18,7 @@ namespace indiepub {
         std::vector<indiepub::BandMember> getAllBandMembers();
         indiepub::BandMember getBandMemberById(const std::string& band_id, const std::string& user_id);
         std::vector<indiepub::BandMember> getBandMembersByBandId(const std::string& band_id);
+        indiepub::BandMember getBandMemberByUserId(const std::string& user_id);
 
     private:
         // Add any private members or methods if needed
