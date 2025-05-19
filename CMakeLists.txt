@@ -57,7 +57,9 @@ set(INDIE_INC
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/PostsByDateController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/TicketsByEventController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/TicketsByUserController.hpp
-        ${CMAKE_SOURCE_DIR}/include/backend/controllers/DailyTicketSalesController.hpp)
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/DailyTicketSalesController.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/api/Endpoints.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/api/RESTfulAPI.hpp)
 
 set(INDIE_SRC 
         ${CMAKE_SOURCE_DIR}/src/backend/CassandraConnection.cpp
@@ -79,23 +81,19 @@ set(INDIE_SRC
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/PostsByDateController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/TicketsByEventController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/TicketsByUserController.cpp
-        ${CMAKE_SOURCE_DIR}/src/backend/controllers/DailyTicketSalesController.cpp)
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/DailyTicketSalesController.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/api/Endpoints.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/api/RESTfulAPI.cpp)
+
+find_package(ZLIB REQUIRED)
 
 add_library(indieback ${INDIE_INC} ${INDIE_SRC} ${THIRD_PARTY_INC})
 target_include_directories(indieback PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(indieback ${THIRD_PARTY_LIB})
+target_link_libraries(indieback ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs)
 
+add_executable(rest_api ${CMAKE_SOURCE_DIR}/src/APIServer.cpp ${INDIE_INC} ${INDIE_SRC} ${THIRD_PARTY_INC})
+target_include_directories(rest_api PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(rest_api indieback ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs)
 
-include(CTest)
-enable_testing()
-
-add_executable(indieback_test ${CMAKE_SOURCE_DIR}/tests/TestIndieback.cpp ${INDIE_INC} ${INDIE_SRC} ${THIRD_PARTY_INC})
-target_include_directories(indieback_test PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(indieback_test indieback ${THIRD_PARTY_LIB})
-
-add_test(NAME IndieBackTest COMMAND indieback_test)
-# Add tests for each argument
-add_test(NAME TEST_CASSANDRA COMMAND indieback_test cassandra)
-add_test(NAME TEST_MODELS COMMAND indieback_test models)
-add_test(NAME TEST_CONTROLLERS COMMAND indieback_test controller)
+include(tests/CMakeLists.txt)
 
