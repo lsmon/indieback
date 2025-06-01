@@ -12,7 +12,10 @@
 class Endpoints
 {
 private:
-    /* data */
+    static bool isValidEmail(const std::string &email);
+    
+    static bool isValidPassword(const std::string &password);
+
 public:
     Endpoints(/* args */);
     ~Endpoints();

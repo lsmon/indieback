@@ -87,6 +87,15 @@ set(INDIE_SRC
 
 find_package(ZLIB REQUIRED)
 
+find_package(OpenSSL REQUIRED)
+
+if(OPENSSL_FOUND)
+    message(STATUS "OPENSSL_INCLUDE_DIR:    ${OPENSSL_INCLUDE_DIR}")
+    message(STATUS "OPENSSL_LIBRARIES:      ${OPENSSL_LIBRARIES}")
+
+    include_directories(${OPENSSL_INCLUDE_DIR})
+endif()
+
 add_library(indieback ${INDIE_INC} ${INDIE_SRC} ${THIRD_PARTY_INC})
 target_include_directories(indieback PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(indieback ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs)
