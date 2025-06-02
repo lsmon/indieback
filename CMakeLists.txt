@@ -11,6 +11,15 @@ set(PROJECT_VERSION_PATCH 0)
 set(PROJECT_VERSION_TWEAK 0)
 set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}")
 
+set(PROPERTY ${CMAKE_BINARY_DIR}/resources/logging.properties)
+set(LOG_CONFIG ${CMAKE_SOURCE_DIR}/include/logconfig.h)
+set(CONFIG ${CMAKE_SOURCE_DIR}/include/config.h)
+
+set(CMK_SRC_DIR ${CMAKE_SOURCE_DIR})
+
+configure_file(logconfig.h.in ${LOG_CONFIG})
+configure_file(logging.properties.in ${PROPERTY})
+configure_file(config.h.in ${CONFIG})
 
 include(external/CMakeLists.txt)
 include(cmake/cache.cmake)
@@ -61,6 +70,11 @@ set(INDIE_INC
         ${CMAKE_SOURCE_DIR}/include/backend/api/Endpoints.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/api/RESTfulAPI.hpp)
 
+set(INDIE_CRYPTO_INC 
+        ${CMAKE_SOURCE_DIR}/include/crypto/AuthCrypto.hpp
+        ${CMAKE_SOURCE_DIR}/include/crypto/Hash.hpp
+        ${CMAKE_SOURCE_DIR}/include/crypto/StringEncoder.hpp)
+
 set(INDIE_SRC 
         ${CMAKE_SOURCE_DIR}/src/backend/CassandraConnection.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/IndieBackModels.cpp
@@ -85,6 +99,11 @@ set(INDIE_SRC
         ${CMAKE_SOURCE_DIR}/src/backend/api/Endpoints.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/api/RESTfulAPI.cpp)
 
+set(INDIE_CRYPTO_SRC 
+        ${CMAKE_SOURCE_DIR}/src/crypto/AuthCrypto.cpp
+        ${CMAKE_SOURCE_DIR}/src/crypto/Hash.cpp
+        ${CMAKE_SOURCE_DIR}/src/crypto/StringEncoder.cpp)
+    
 find_package(ZLIB REQUIRED)
 
 find_package(OpenSSL REQUIRED)
@@ -93,16 +112,22 @@ if(OPENSSL_FOUND)
     message(STATUS "OPENSSL_INCLUDE_DIR:    ${OPENSSL_INCLUDE_DIR}")
     message(STATUS "OPENSSL_LIBRARIES:      ${OPENSSL_LIBRARIES}")
 
+    add_library(indieback ${INDIE_INC} ${INDIE_SRC} ${INDIE_CRYPTO_INC} ${INDIE_CRYPTO_SRC} ${THIRD_PARTY_INC})
+
+    add_executable(rest_api ${CMAKE_SOURCE_DIR}/src/APIServer.cpp ${INDIE_INC} ${INDIE_SRC} ${INDIE_CRYPTO_INC} ${INDIE_CRYPTO_SRC} ${THIRD_PARTY_INC})
+
     include_directories(${OPENSSL_INCLUDE_DIR})
+    target_include_directories(indieback PUBLIC ${CMAKE_SOURCE_DIR}/include ${OPENSSL_INCLUDE_DIR})
+
+    target_link_libraries(indieback ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs ${OPENSSL_LIBRARIES})
+
+    target_include_directories(rest_api PUBLIC ${CMAKE_SOURCE_DIR}/include ${OPENSSL_INCLUDE_DIR})
+
+    target_link_libraries(rest_api indieback ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs ${OPENSSL_LIBRARIES})
+
+else()
+    message(WARNING "OpenSSL not found, some features may be disabled")
 endif()
-
-add_library(indieback ${INDIE_INC} ${INDIE_SRC} ${THIRD_PARTY_INC})
-target_include_directories(indieback PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(indieback ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs)
-
-add_executable(rest_api ${CMAKE_SOURCE_DIR}/src/APIServer.cpp ${INDIE_INC} ${INDIE_SRC} ${THIRD_PARTY_INC})
-target_include_directories(rest_api PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(rest_api indieback ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs)
 
 include(tests/CMakeLists.txt)
 

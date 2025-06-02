@@ -45,6 +45,7 @@
 /include/netppconfig.h
 /include/Scheduler.hpp
 /include/Task.hpp
+/include/config.h
 /json
 /lib
 /logpp
@@ -53,3 +54,4 @@
 /data-model
 /logpp-*.log
 /resources/password.txt
+/resources/*
