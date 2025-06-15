@@ -5,9 +5,11 @@
 #include <http/Path.hpp>
 #include <http/Response.hpp>
 #include <http/Request.hpp>
+#include <crypto/AuthCrypto.hpp>
 #include <string>
 #include <iostream>
 #include <stdexcept>
+#include <memory>
 
 class Endpoints
 {
@@ -15,9 +17,11 @@ private:
     static bool isValidEmail(const std::string &email);
     
     static bool isValidPassword(const std::string &password);
+    
 
 public:
     Endpoints(/* args */);
+
     ~Endpoints();
 
     static void signInHandler(const HttpRequest &request, HttpResponse &response, Path* path);

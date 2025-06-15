@@ -2,17 +2,31 @@
 #include <vector>
 #include <cassert>
 #include <memory>
-#include "crypto/AuthCrypto.hpp"
-#include "crypto/Hash.hpp"
-#include "crypto/StringEncoder.hpp"
-#include "util/logging/Log.hpp"
+#include <crypto/AuthCrypto.hpp>
+#include <crypto/Hash.hpp>
+#include <crypto/StringEncoder.hpp>
+#include <util/logging/Log.hpp>
 #include "config.h"
 
 static std::string originalText = R"(The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. 12345678890123456788901234567890)";
 
 void testEncryptionDecryption() {
-    std::unique_ptr<AuthCrypto> authCrypto = std::make_unique<AuthCrypto>();
-    authCrypto->generateKeyPair("");
+    std::unique_ptr<AuthCrypto> authCrypto = std::make_unique<AuthCrypto>(BACKEND_RSA_FILE_NAME);
+    // authCrypto->generateKeyPair("");
+    if (!authCrypto->doesPublicKeyExists()) {
+        std::cerr << "Public key does not exist. Generating new key pair." << std::endl;
+        return;
+    } else {
+        std::cout << "Public key exists." << std::endl;
+        authCrypto->loadPublicKey();
+    }
+    if (!authCrypto->doesPrivateKeyExists()) {
+        std::cerr << "Private key does not exist. Generating new key pair." << std::endl;
+        return;
+    } else {
+        std::cout << "Private key exists." << std::endl;
+        authCrypto->loadPrivateKey("6102e3b0");
+    }
 
     std::vector<byte> data = StringEncoder::stringToBytes(originalText);
     byte* encryptedData = nullptr;
@@ -26,6 +40,7 @@ void testEncryptionDecryption() {
 
     std::cout << "Original text: " << originalText << std::endl;
     std::cout << "Encrypted text (hex): " << StringEncoder::bytesToHex(encryptedData, encryptedSize) << std::endl;
+
     std::cout << "Encrypted text (base64): " << StringEncoder::base64Encode(encryptedData, encryptedSize) << std::endl;
     std::cout << "Decrypted text: " << decryptedText << std::endl;
 

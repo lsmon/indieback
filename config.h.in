@@ -3,6 +3,10 @@
 
 #define VERSION "@PROJECT_VERSION@"
 #define DEFAULT_KEY_FILE_NAME "@PROJECT_NAME@"
+#define BACKEND_RSA_FILE_NAME "@PROJECT_NAME@"
+#define FRONTEND_RSA_FILE_NAME "indiefront"
+#define PUB_KEY_POSTFIX "_pub.pem"
+#define PRV_KEY_POSTFIX "_prv.pem"
 
 // #define ENABLE_TESTS true
 

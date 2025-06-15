@@ -1,4 +1,4 @@
-#include "crypto/AuthCrypto.hpp"
+#include <crypto/AuthCrypto.hpp>
 #include "Exception.hpp"
 #include "util/String.hpp"
 #include "util/Util.hpp"
@@ -110,12 +110,12 @@ void AuthCrypto::init()
     this->public_key_file = PUB_KEY_ARCHIVE;
     this->public_key_file.append("/");
     this->public_key_file.append(this->filename);
-    this->public_key_file.append(".pub");
+    this->public_key_file.append(PUB_KEY_POSTFIX);
 
     this->private_key_file = PRV_KEY_ARCHIVE;
     this->private_key_file.append("/");
     this->private_key_file.append(this->filename);
-    this->private_key_file.append(".pem");
+    this->private_key_file.append(PRV_KEY_POSTFIX);
 }
 
 bool AuthCrypto::loadPrivateKey(const char *password) {
@@ -326,6 +326,7 @@ std::string AuthCrypto::getPublicKeyFilename() {
 std::string AuthCrypto::getPrivateKeyFilename() {
     return private_key_file;
 }
+
 
 void AuthCrypto::loadPublicKey(std::string filename) {
     this->public_key_file = filename;

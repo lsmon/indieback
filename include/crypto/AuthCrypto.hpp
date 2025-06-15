@@ -20,32 +20,32 @@ private:
 
     void destroy();
 
+    
 public:
     AuthCrypto();
     
-    // Constructors, destructors if needed
     AuthCrypto(const char *filename);
 
     ~AuthCrypto();
-
+    
     std::string getPublicKeyFilename();
-
+    
     std::string getPrivateKeyFilename();
 
     bool loadPrivateKey(const char *password);
-
-    bool loadPublicKey();
     
+    bool loadPublicKey();
+        
     bool doesPrivateKeyExists();
-
+    
     bool doesPublicKeyExists();
-
+    
     bool generatePublicKey(EVP_PKEY *pkey);
-
+    
     bool generatePrivateKey(EVP_PKEY *pkey, const char *password=NULL);
-
+    
     bool generateKeyPair(const char *password=NULL);
-
+    
     bool isPublicKeyRsa();
 
     size_t encrypt(unsigned char *src, unsigned char *&out);
@@ -59,7 +59,7 @@ public:
     size_t hashing(unsigned char *msg, unsigned char *&md);
 
     void loadPublicKey(std::string filename);
-
+    
     void loadPrivateKey(std::string filename, const char *password="");
 };
 
