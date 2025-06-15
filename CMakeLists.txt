@@ -117,6 +117,7 @@ if(OPENSSL_FOUND)
     message(STATUS "OPENSSL_LIBRARIES:      ${OPENSSL_LIBRARIES}")
 
     add_library(indie_rsa ${INDIE_CRYPTO_INC} ${INDIE_CRYPTO_SRC})
+    
     add_library(indieback ${INDIE_INC} ${INDIE_SRC} ${THIRD_PARTY_INC})
 
     add_executable(rest_api ${CMAKE_SOURCE_DIR}/src/APIServer.cpp ${INDIE_INC} ${INDIE_SRC} ${INDIE_CRYPTO_INC} ${INDIE_CRYPTO_SRC} ${THIRD_PARTY_INC})

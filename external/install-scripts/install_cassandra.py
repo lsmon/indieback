@@ -28,7 +28,7 @@ def clone():
     os.chdir(root_path)
     # Clone or update nlohmann/json using Git (you need Git installed)
     if not os.path.exists("cassandra-cpp-driver"):
-        run_command("git clone https://github.com/lsmon/cassandra-cpp-driver.git cassandra-cpp-driver")
+        run_command("git clone https://github.com/datastax/cpp-driver.git cassandra-cpp-driver")
     else:
         os.chdir("cassandra-cpp-driver")
         run_command("git pull origin main")
@@ -88,15 +88,28 @@ def install():
 
     if not(os.path.exists(lib_path)):
         os.makedirs(lib_path)
-    _lib = os.path.join(_build, "libcassandra.so." + version);
-    print("copying " + _lib + " to " + lib_path)
-    shutil.copy(_lib, lib_path)
-    _lib = os.path.join(_build, "libcassandra.so.2");
-    print("copying " + _lib + " to " + lib_path)
-    shutil.copy(_lib, lib_path)
-    _lib = os.path.join(_build, "libcassandra.so");
-    print("copying " + _lib + " to " + lib_path)
-    shutil.copy(_lib, lib_path)
+
+    os_name = platform.system()
+    if os_name == "Darwin":
+        _lib = os.path.join(_build, "libcassandra." + version + ".dylib");
+        print("copying " + _lib + " to " + lib_path)
+        shutil.copy(_lib, lib_path)
+        _lib = os.path.join(_build, "libcassandra.2.dylib");
+        print("copying " + _lib + " to " + lib_path)
+        shutil.copy(_lib, lib_path)
+        _lib = os.path.join(_build, "libcassandra.dylib");
+        print("copying " + _lib + " to " + lib_path)
+        shutil.copy(_lib, lib_path)
+    else:    
+        _lib = os.path.join(_build, "libcassandra.so." + version);
+        print("copying " + _lib + " to " + lib_path)
+        shutil.copy(_lib, lib_path)
+        _lib = os.path.join(_build, "libcassandra.so.2");
+        print("copying " + _lib + " to " + lib_path)
+        shutil.copy(_lib, lib_path)
+        _lib = os.path.join(_build, "libcassandra.so");
+        print("copying " + _lib + " to " + lib_path)
+        shutil.copy(_lib, lib_path)
 
     if not os.path.exists(inc_path):
         os.makedirs(inc_path)

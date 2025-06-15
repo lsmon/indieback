@@ -46,7 +46,7 @@ set(JSON_LIB ${CMAKE_SOURCE_DIR}/lib/lib_json-${JSON_V}.a)
 
 message(STATUS "caching installing")
 set(CACHE_V "0.1.0.0")
-set(cache ${CMAKE_SOURCE_DIR}/netpp)
+set(cache ${CMAKE_SOURCE_DIR}/cache)
 if (NOT EXISTS ${cache})
     message(STATUS "${cache} is NOT installed")
     execute_process(COMMAND python3 ${CMAKE_SOURCE_DIR}/external/install-scripts/install_cache.py ${CMAKE_SOURCE_DIR} ${CACHE_V})
