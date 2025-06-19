@@ -112,7 +112,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                         std::string part2 = valueStr.substr(colonPos + 1);
                         LOG_DEBUG << "part1: " << part1;
                         LOG_DEBUG << "part2: " << part2;
-                        std::vector<byte> pwdEnc = StringEncoder::stringToBytes(part1.c_str());
+                        std::vector<byte> pwdEnc = StringEncoder::base64Decode(part1.c_str());
                         byte *decPwData = nullptr;
                         size_t pwLength = RsaServer::getInstance()->decrypt(pwdEnc.data(), pwdEnc.size(), decPwData);
                         if (pwLength <= 0 || decPwData == nullptr)

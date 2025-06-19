@@ -115,26 +115,49 @@ find_package(OpenSSL REQUIRED)
 if(OPENSSL_FOUND)
     message(STATUS "OPENSSL_INCLUDE_DIR:    ${OPENSSL_INCLUDE_DIR}")
     message(STATUS "OPENSSL_LIBRARIES:      ${OPENSSL_LIBRARIES}")
-
-    add_library(indie_rsa ${INDIE_CRYPTO_INC} ${INDIE_CRYPTO_SRC})
     
-    add_library(indieback ${INDIE_INC} ${INDIE_SRC} ${THIRD_PARTY_INC})
-
-    add_executable(rest_api ${CMAKE_SOURCE_DIR}/src/APIServer.cpp ${INDIE_INC} ${INDIE_SRC} ${INDIE_CRYPTO_INC} ${INDIE_CRYPTO_SRC} ${THIRD_PARTY_INC})
-
     include_directories(${OPENSSL_INCLUDE_DIR})
+    
+    add_library(indie_rsa ${INDIE_CRYPTO_INC} ${INDIE_CRYPTO_SRC})
+    target_include_directories(indie_rsa PUBLIC ${CMAKE_SOURCE_DIR}/include ${OPENSSL_INCLUDE_DIR})
 
+    add_library(indieback ${INDIE_INC} ${INDIE_SRC} ${THIRD_PARTY_INC})
     target_include_directories(indieback PUBLIC ${CMAKE_SOURCE_DIR}/include ${OPENSSL_INCLUDE_DIR})
 
-    target_include_directories(indie_rsa PUBLIC ${CMAKE_SOURCE_DIR}/include ${OPENSSL_INCLUDE_DIR})
-    
+    add_executable(rest_api ${CMAKE_SOURCE_DIR}/src/APIServer.cpp ${INDIE_INC} ${INDIE_SRC} ${INDIE_CRYPTO_INC} ${INDIE_CRYPTO_SRC} ${THIRD_PARTY_INC})
     target_include_directories(rest_api PUBLIC ${CMAKE_SOURCE_DIR}/include ${OPENSSL_INCLUDE_DIR})
-    
-    target_link_libraries(indie_rsa ${OPENSSL_LIBRARIES} ZLIB::ZLIB stdc++fs ${OPENSSL_LIBRARIES})
-    
-    target_link_libraries(indieback indie_rsa ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs ${OPENSSL_LIBRARIES})
 
-    target_link_libraries(rest_api indieback indie_rsa ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs ${OPENSSL_LIBRARIES})
+    if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+        message(STATUS "Building on macOS")
+
+        target_link_libraries(indie_rsa PRIVATE ${OPENSSL_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)
+        
+        target_compile_definitions(indie_rsa PUBLIC OPENSSL_SYS_MACOSX)
+
+        set_target_properties(indie_rsa PROPERTIES
+                CXX_STANDARD 17
+                CXX_STANDARD_REQUIRED ON
+                CXX_EXTENSIONS OFF
+                OUTPUT_NAME "indie_rsa"
+                PREFIX "lib"
+                SUFFIX ".dylib")
+
+        target_link_libraries(rest_api indieback indie_rsa ${THIRD_PARTY_LIB} ${OPENSSL_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)
+
+    elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+        message(STATUS "Building on Linux")
+
+        target_link_libraries(indie_rsa ${OPENSSL_LIBRARIES} ZLIB::ZLIB stdc++fs ${OPENSSL_LIBRARIES})
+
+        target_link_libraries(indieback indie_rsa ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs ${OPENSSL_LIBRARIES})
+
+        target_link_libraries(rest_api indieback indie_rsa ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs ${OPENSSL_LIBRARIES})
+
+    elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+        message(WARNING "Building on Windows")
+    else()
+        message(WARNING "Building on unknown OS: ${CMAKE_SYSTEM_NAME}")
+    endif()
 
 else()
     message(WARNING "OpenSSL not found, some features may be disabled")
