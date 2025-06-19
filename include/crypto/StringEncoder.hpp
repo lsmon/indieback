@@ -17,6 +17,8 @@ public:
 
     static std::string bytesToHex(const byte* bytes, size_t length);
 
+    static std::vector<byte> hexToBytes(const std::string &hexStr);
+
     static unsigned long long hexToInteger(const std::string& hexStr);
 };
 

@@ -59,9 +59,7 @@ bool Endpoints::isValidPassword(const std::string &password)
 
 void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response, Path *path)
 {
-    LOG_DEBUG << "SignInHandler called";
     std::string msg = request.getBody();
-    LOG_DEBUG << msg;
     try
     {
         std::string email;
@@ -72,10 +70,9 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
             for (const auto key : jsonObj.keys())
             {
                 auto value = jsonObj[key];
-                LOG_DEBUG << key << ": " << value;
                 if (key == "email")
                 {
-                    std::vector<byte> encryptedData = StringEncoder::stringToBytes(value.c_str());
+                    std::vector<byte> encryptedData = StringEncoder::hexToBytes(value.c_str());
                     byte *decryptedData = nullptr;
                     size_t decryptedLen = RsaClient::getInstance()->decrypt(encryptedData.data(), encryptedData.size(), decryptedData);
                     std::string email;
@@ -88,17 +85,16 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                     {
                         int status = CODES::BAD_REQUEAST;
                         std::string errorMsg = Status(status).ss.str() + " Failed to decrypt email";
-                        LOG_DEBUG << "Failed to decrypt email";
+                        LOG_ERROR << "Failed to decrypt email";
                         response.setStatus(status);
                         response.setStatusMsg(errorMsg);
                         return;
                     }
-
                     if (!isValidEmail(email))
                     {
                         int status = CODES::BAD_REQUEAST;
                         std::string errorMsg = Status(status).ss.str() + " " + email;
-                        LOG_DEBUG << "Invalid email format";
+                        LOG_ERROR << "Invalid email format";
                         response.setStatus(status);
                         response.setStatusMsg(errorMsg);
                         return;
@@ -114,19 +110,35 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                         // Split into two parts based on ':'
                         std::string part1 = valueStr.substr(0, colonPos);
                         std::string part2 = valueStr.substr(colonPos + 1);
+                        LOG_DEBUG << "part1: " << part1;
+                        LOG_DEBUG << "part2: " << part2;
+                        std::vector<byte> pwdEnc = StringEncoder::stringToBytes(part1.c_str());
+                        byte *decPwData = nullptr;
+                        size_t pwLength = RsaServer::getInstance()->decrypt(pwdEnc.data(), pwdEnc.size(), decPwData);
+                        if (pwLength <= 0 || decPwData == nullptr)
+                        {
+                            int status = CODES::BAD_REQUEAST;
+                            std::string errorMsg = Status(status).ss.str() + " Failed to decrypt password";
+                            LOG_ERROR << "Failed to decrypt password";
+                            response.setStatus(status);
+                            response.setStatusMsg(errorMsg);
+                            return;
+                        }
+                        std::string pwStr = StringEncoder::bytesToString(decPwData, pwLength);
+                        LOG_DEBUG << "part1: " << pwStr;
+                        LOG_DEBUG << "signed part1: " << part2;
+                        // Here, part1 is the password and part2 is the signature                        
                         // You can choose which part to use as password, or combine them as needed
                         // Here, as an example, we concatenate them with a colon
 
-                        std::vector<byte> passwordBytes = StringEncoder::stringToBytes(part1.c_str());
-                        std::vector<byte> signatureBytes = StringEncoder::stringToBytes(part2.c_str());
-                        bool isVerified = RsaServer::getInstance()->verify(
-                            reinterpret_cast<const char *>(passwordBytes.data()),
-                            signatureBytes.data(), signatureBytes.size());
+                        // std::vector<byte> passwordBytes = StringEncoder::hexToBytes(part1.c_str());
+                        std::vector<byte> signatureBytes = StringEncoder::base64Decode(part2.c_str());
+                        bool isVerified = RsaClient::getInstance()->verify(pwStr.c_str(), signatureBytes.data(), signatureBytes.size());
                         if (!isVerified)
                         {
                             int status = CODES::BAD_REQUEAST;
                             std::string errorMsg = Status(status).ss.str() + " Password signature verification failed";
-                            LOG_DEBUG << "Password signature verification failed";
+                            LOG_ERROR << "Password signature verification failed";
                             response.setStatus(status);
                             response.setStatusMsg(errorMsg);
                             return;
@@ -146,7 +158,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                         {
                             int status = CODES::BAD_REQUEAST;
                             std::string errorMsg = Status(status).ss.str() + " Failed to decrypt password";
-                            LOG_DEBUG << "Failed to decrypt password";
+                            LOG_ERROR << "Failed to decrypt password";
                             response.setStatus(status);
                             response.setStatusMsg(errorMsg);
                             return;
@@ -155,7 +167,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                         {
                             int status = CODES::BAD_REQUEAST;
                             std::string errorMsg = Status(status).ss.str() + " Weak password";
-                            LOG_DEBUG << "Invalid password format";
+                            LOG_ERROR << "Invalid password format";
                             response.setStatus(status);
                             response.setStatusMsg(errorMsg);
                             return;
@@ -166,7 +178,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                     {
                         int status = CODES::BAD_REQUEAST;
                         std::string errorMsg = Status(status).ss.str() + " password sent... not signed";
-                        LOG_DEBUG << "Invalid password format";
+                        LOG_ERROR << "Invalid password format";
                         response.setStatus(status);
                         response.setStatusMsg(errorMsg);
                         return;

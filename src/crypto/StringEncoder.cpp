@@ -62,6 +62,21 @@ std::string StringEncoder::bytesToHex(const byte *bytes, size_t length)
     return oss.str();
 }
 
+std::vector<byte> StringEncoder::hexToBytes(const std::string &hexStr)
+{
+    std::vector<byte> bytes;
+    size_t len = hexStr.length();
+    bytes.reserve(len / 2);
+    
+    for (size_t i = 0; i < len; i += 2) {
+        std::string byteStr = hexStr.substr(i, 2);
+        unsigned char byte = static_cast<unsigned char>(std::stoul(byteStr, nullptr, 16));
+        bytes.push_back(byte);
+    }
+    
+    return bytes;
+}
+
 unsigned long long StringEncoder::hexToInteger(const std::string &hexStr)
 {
     unsigned long long value;

@@ -8,50 +8,84 @@
 #include <util/logging/Log.hpp>
 #include "config.h"
 
-static std::string originalText = R"(The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. 12345678890123456788901234567890)";
+static std::string originalText = R"(The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. ABCDEFGHIJKLMNOPQRSTUVWXYZ123456)";
+std::unique_ptr<AuthCrypto> authCrypto = std::make_unique<AuthCrypto>("indieback");
 
-void testEncryptionDecryption() {
-    std::unique_ptr<AuthCrypto> authCrypto = std::make_unique<AuthCrypto>(BACKEND_RSA_FILE_NAME);
-    // authCrypto->generateKeyPair("");
+std::string testEncryption() {
     if (!authCrypto->doesPublicKeyExists()) {
         std::cerr << "Public key does not exist. Generating new key pair." << std::endl;
-        return;
+        return "";
     } else {
         std::cout << "Public key exists." << std::endl;
         authCrypto->loadPublicKey();
     }
-    if (!authCrypto->doesPrivateKeyExists()) {
-        std::cerr << "Private key does not exist. Generating new key pair." << std::endl;
-        return;
-    } else {
-        std::cout << "Private key exists." << std::endl;
-        authCrypto->loadPrivateKey("6102e3b0");
-    }
-
+    
     std::vector<byte> data = StringEncoder::stringToBytes(originalText);
     byte* encryptedData = nullptr;
-    byte* decryptedData = nullptr;
 
     std::cout << "Original length: " << originalText.size() << std::endl;
     size_t encryptedSize = authCrypto->encrypt(data.data(), encryptedData);
-    size_t decryptedSize = authCrypto->decrypt(encryptedData, encryptedSize, decryptedData);
 
+    std::string encryptedText = StringEncoder::bytesToHex(encryptedData, encryptedSize);
+    delete [] encryptedData;
+    return encryptedText;
+}
+
+std::string testDecryption(std::string encryptedText) 
+{
+    if (!authCrypto->doesPrivateKeyExists()) {
+        std::cerr << "Private key does not exist. Generating new key pair." << std::endl;
+        return "";
+    } else {
+        std::cout << "Private key exists." << std::endl;
+        authCrypto->loadPrivateKey("");
+    }
+
+    std::vector<byte> data = StringEncoder::hexToBytes(encryptedText);
+    byte* decryptedData = nullptr;
+
+    size_t decryptedSize = authCrypto->decrypt(data.data(), data.size(), decryptedData);
     std::string decryptedText = StringEncoder::bytesToString(decryptedData, decryptedSize);
 
-    std::cout << "Original text: " << originalText << std::endl;
-    std::cout << "Encrypted text (hex): " << StringEncoder::bytesToHex(encryptedData, encryptedSize) << std::endl;
-
-    std::cout << "Encrypted text (base64): " << StringEncoder::base64Encode(encryptedData, encryptedSize) << std::endl;
-    std::cout << "Decrypted text: " << decryptedText << std::endl;
-
-    std::cout << ((originalText == decryptedText)?"TRUE":"FALSE") << std::endl;
     assert(originalText == decryptedText && "Decrypted text matches the original text");
-    
-    std::cout << "Test passed: Decrypted text matches the original text." << std::endl;
 
     // Clean up
-    delete[] encryptedData;
     delete[] decryptedData;
+    return decryptedText;
+}
+
+std::string signing(std::string text) {
+    if (!authCrypto->doesPrivateKeyExists()) {
+        std::cerr << "Private key does not exist. Generating new key pair." << std::endl;
+        return "";
+    } else {
+        std::cout << "Private key exists." << std::endl;
+        authCrypto->loadPrivateKey("");
+    }
+
+    byte* signature = nullptr;
+    size_t signature_length = authCrypto->sign(text.c_str(), signature, "");
+    std::string signatureHex = StringEncoder::bytesToHex(signature, signature_length);
+    
+    // Clean up
+    delete[] signature;
+
+    return signatureHex;
+}
+
+bool verifySignature(std::string text, std::string signatureHex) {
+    if (!authCrypto->doesPublicKeyExists()) {
+        std::cerr << "Public key does not exist. Generating new key pair." << std::endl;
+        return false;
+    } else {
+        std::cout << "Public key exists." << std::endl;
+        authCrypto->loadPublicKey();
+    }
+
+    std::vector<byte> signatureBytes = StringEncoder::hexToBytes(signatureHex);
+    bool isVerified = authCrypto->verify(text.c_str(), signatureBytes.data(), signatureBytes.size());
+    
+    return isVerified;
 }
 
 void testHashing() {
@@ -91,7 +125,25 @@ void testHashing() {
 }
 
 int main(int argc, char* argv[]) {
-    testEncryptionDecryption();
-    testHashing();
+    // testEncryptionDecryption();
+    // testHashing();
+    std::cout << "Original text: " << originalText << std::endl;
+    
+    std::cout << "Testing RSA encryption and decryption..." << std::endl;
+    
+    std::string encryptedText = testEncryption();
+    std::cout << "Encrypted text: " << encryptedText << std::endl;
+    std::string decryptedText = testDecryption(encryptedText);
+    std::cout << "Decrypted text: " << decryptedText << std::endl;
+    assert(originalText == decryptedText && "Decrypted text matches the original text");
+
+
+    std::cout << "Testing RSA signing and verification..." << std::endl;
+    std::string signatureHex = signing(originalText);
+    std::cout << "Signature (hex): " << signatureHex << std::endl;
+    bool isVerified = verifySignature(originalText, signatureHex);
+    std::cout << "Signature verification: " << (isVerified ? "Success" : "Failure") << std::endl;
+    assert(isVerified && "Signature verification succeeded");
+
     return EXIT_SUCCESS;
 }
