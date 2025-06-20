@@ -114,8 +114,8 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                         LOG_DEBUG << "part2: " << part2;
                         std::vector<byte> pwdEnc = StringEncoder::base64Decode(part1.c_str());
                         byte *decPwData = nullptr;
-                        size_t pwLength = RsaServer::getInstance()->decrypt(pwdEnc.data(), pwdEnc.size(), decPwData);
-                        if (pwLength <= 0 || decPwData == nullptr)
+                        size_t pwLength = RsaClient::getInstance()->decrypt(pwdEnc.data(), pwdEnc.size(), decPwData);
+                        if (pwLength == 1024)
                         {
                             int status = CODES::BAD_REQUEAST;
                             std::string errorMsg = Status(status).ss.str() + " Failed to decrypt password";

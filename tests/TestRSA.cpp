@@ -12,12 +12,12 @@ static std::string originalText = R"(The quick brown fox jumps over the lazy dog
 std::unique_ptr<AuthCrypto> authCrypto = std::make_unique<AuthCrypto>("indieback");
 
 std::string testEncryption() {
-    if (!authCrypto->doesPublicKeyExists()) {
+     if (!authCrypto->doesPrivateKeyExists()) {
         std::cerr << "Public key does not exist. Generating new key pair." << std::endl;
         return "";
     } else {
         std::cout << "Public key exists." << std::endl;
-        authCrypto->loadPublicKey();
+        authCrypto->loadPrivateKey("");
     }
     
     std::vector<byte> data = StringEncoder::stringToBytes(originalText);
@@ -26,22 +26,22 @@ std::string testEncryption() {
     std::cout << "Original length: " << originalText.size() << std::endl;
     size_t encryptedSize = authCrypto->encrypt(data.data(), encryptedData);
 
-    std::string encryptedText = StringEncoder::bytesToHex(encryptedData, encryptedSize);
+    std::string encryptedText = StringEncoder::base64Encode(encryptedData, encryptedSize);
     delete [] encryptedData;
     return encryptedText;
 }
 
 std::string testDecryption(std::string encryptedText) 
 {
-    if (!authCrypto->doesPrivateKeyExists()) {
+    if (!authCrypto->doesPublicKeyExists()) {
         std::cerr << "Private key does not exist. Generating new key pair." << std::endl;
         return "";
     } else {
         std::cout << "Private key exists." << std::endl;
-        authCrypto->loadPrivateKey("");
+        authCrypto->loadPublicKey();
     }
 
-    std::vector<byte> data = StringEncoder::hexToBytes(encryptedText);
+    std::vector<byte> data = StringEncoder::base64Decode(encryptedText);
     byte* decryptedData = nullptr;
 
     size_t decryptedSize = authCrypto->decrypt(data.data(), data.size(), decryptedData);
@@ -65,7 +65,7 @@ std::string signing(std::string text) {
 
     byte* signature = nullptr;
     size_t signature_length = authCrypto->sign(text.c_str(), signature, "");
-    std::string signatureHex = StringEncoder::bytesToHex(signature, signature_length);
+    std::string signatureHex = StringEncoder::base64Encode(signature, signature_length);
     
     // Clean up
     delete[] signature;
@@ -82,7 +82,7 @@ bool verifySignature(std::string text, std::string signatureHex) {
         authCrypto->loadPublicKey();
     }
 
-    std::vector<byte> signatureBytes = StringEncoder::hexToBytes(signatureHex);
+    std::vector<byte> signatureBytes = StringEncoder::base64Decode(signatureHex);
     bool isVerified = authCrypto->verify(text.c_str(), signatureBytes.data(), signatureBytes.size());
     
     return isVerified;
@@ -135,12 +135,12 @@ int main(int argc, char* argv[]) {
     std::cout << "Encrypted text: " << encryptedText << std::endl;
     std::string decryptedText = testDecryption(encryptedText);
     std::cout << "Decrypted text: " << decryptedText << std::endl;
-    assert(originalText == decryptedText && "Decrypted text matches the original text");
 
+    assert(originalText == decryptedText && "Decrypted text matches the original text");
 
     std::cout << "Testing RSA signing and verification..." << std::endl;
     std::string signatureHex = signing(originalText);
-    std::cout << "Signature (hex): " << signatureHex << std::endl;
+    std::cout << "Signature: " << signatureHex << std::endl;
     bool isVerified = verifySignature(originalText, signatureHex);
     std::cout << "Signature verification: " << (isVerified ? "Success" : "Failure") << std::endl;
     assert(isVerified && "Signature verification succeeded");
