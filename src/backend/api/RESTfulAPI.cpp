@@ -4,7 +4,7 @@
 
 RESTfulAPI::RESTfulAPI()
 {
-    apiServer = std::make_unique<HttpServer>("localhost", "8080", 1024, 4);
+    apiServer = std::make_unique<HttpServer>("localhost", "8008", 1024, 4);
 }
 
 void RESTfulAPI::initEndpointHandlers() {
@@ -23,7 +23,7 @@ void RESTfulAPI::initEndpointHandlers() {
     apiServer->setHttpHandler(HttpMethod::POST, "/posts", Endpoints::createPostHandler);
     
 
-    LOG_INFO << "Server listening on localhost : 8080 ";
+    LOG_INFO << "Server listening on localhost : 8008 ";
     apiServer->run();
 }
 

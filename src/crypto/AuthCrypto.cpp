@@ -148,11 +148,11 @@ bool AuthCrypto::loadPublicKey() {
     return true;
 }
 
-size_t AuthCrypto::encrypt(unsigned char *src, unsigned char *&out, const char *password)
+size_t AuthCrypto::encrypt(unsigned char *src, unsigned char *&out)
 {
-    if (private_key == nullptr) if (!loadPrivateKey(password)) return -1;
-    if (ctx == nullptr) ctx = EVP_PKEY_CTX_new(private_key, nullptr);
-
+    if (public_key == nullptr) if (!loadPublicKey()) return -1;
+    if (ctx == nullptr) ctx = EVP_PKEY_CTX_new(public_key, nullptr);
+    
     if (EVP_PKEY_encrypt_init(ctx) <= 0) {
         std::cerr << "encryption init failed" << std::endl;
         destroy();
@@ -180,10 +180,11 @@ size_t AuthCrypto::encrypt(unsigned char *src, unsigned char *&out, const char *
     return out_len;
 }
 
-size_t AuthCrypto::decrypt(unsigned char *src, size_t src_len, unsigned char * &out) {
-    if (public_key == nullptr) if (!loadPublicKey()) return -1;
-    if (ctx == nullptr) ctx = EVP_PKEY_CTX_new(public_key, nullptr);
-
+size_t AuthCrypto::decrypt(unsigned char *src, size_t src_len, unsigned char * &out, const char *password) 
+{
+    if (private_key == nullptr) if (!loadPrivateKey(password)) return -1;
+    if (ctx == nullptr) ctx = EVP_PKEY_CTX_new(private_key, nullptr);
+    
     if (EVP_PKEY_decrypt_init(ctx) <= 0) {
         std::cerr << "decryption init error" << std::endl;
         destroy();

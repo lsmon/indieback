@@ -74,7 +74,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                 {
                     std::vector<byte> encryptedData = StringEncoder::hexToBytes(value.c_str());
                     byte *decryptedData = nullptr;
-                    size_t decryptedLen = RsaClient::getInstance()->decrypt(encryptedData.data(), encryptedData.size(), decryptedData);
+                    size_t decryptedLen = RsaServer::getInstance()->decrypt(encryptedData.data(), encryptedData.size(), decryptedData);
                     std::string email;
                     if (decryptedData && decryptedLen > 0)
                     {
@@ -114,7 +114,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                         LOG_DEBUG << "part2: " << part2;
                         std::vector<byte> pwdEnc = StringEncoder::base64Decode(part1.c_str());
                         byte *decPwData = nullptr;
-                        size_t pwLength = RsaClient::getInstance()->decrypt(pwdEnc.data(), pwdEnc.size(), decPwData);
+                        size_t pwLength = RsaServer::getInstance()->decrypt(pwdEnc.data(), pwdEnc.size(), decPwData);
                         if (pwLength == 1024)
                         {
                             int status = CODES::BAD_REQUEAST;

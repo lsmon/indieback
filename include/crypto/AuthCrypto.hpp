@@ -48,9 +48,9 @@ public:
     
     bool isPublicKeyRsa();
 
-    size_t encrypt(unsigned char *src, unsigned char *&out, const char *password=NULL);
+    size_t encrypt(unsigned char *src, unsigned char *&out);
 
-    size_t decrypt(unsigned char *src, size_t src_len, unsigned char *&out);
+    size_t decrypt(unsigned char *src, size_t src_len, unsigned char *&out, const char *password=NULL);
 
     size_t sign(const char *msg, unsigned char *&sig, const char *password=NULL);
 
