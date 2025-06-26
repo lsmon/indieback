@@ -38,6 +38,31 @@ std::time_t indiepub::User::created_at() const
     return created_at_;
 }
 
+void indiepub::User::user_id(const std::string &user_id)
+{
+    user_id_ = user_id;
+}
+
+void indiepub::User::email(const std::string &email)
+{
+    email_ = email;
+}
+
+void indiepub::User::role(const std::string &role)
+{
+    role_ = role;
+}
+
+void indiepub::User::name(const std::string &name)
+{
+    name_ = name;
+}
+
+void indiepub::User::created_at(const std::time_t &created_at)
+{
+    created_at_ = created_at;
+}
+
 std::string indiepub::User::to_json() const
 {
     std::unique_ptr<JSONObject> json = std::make_unique<JSONObject>();

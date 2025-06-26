@@ -5,6 +5,7 @@
 #include <crypto/RsaClient.hpp>
 #include <crypto/RsaServer.hpp>
 #include <crypto/StringEncoder.hpp>
+#include <util/UUID.hpp>
 #include "config.h"
 
 Endpoints::Endpoints(/* args */)
@@ -13,6 +14,16 @@ Endpoints::Endpoints(/* args */)
 
 Endpoints::~Endpoints()
 {
+}
+
+indiepub::CredentialsController Endpoints::getCredentialsController()
+{
+    return indiepub::CredentialsController(CASS_CP, CASS_UN, CASS_PW, CASS_KS);
+}
+
+indiepub::UsersController Endpoints::getUsersController()
+{
+    return indiepub::UsersController(CASS_CP, CASS_UN, CASS_PW, CASS_KS);
 }
 
 bool Endpoints::isValidEmail(const std::string &email)
@@ -63,7 +74,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
     try
     {
         std::string email;
-        std::string password;
+        std::string pwHash;
         if (!msg.empty())
         {
             auto jsonObj = JSONObject(msg);
@@ -72,13 +83,12 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                 auto value = jsonObj[key];
                 if (key == "email")
                 {
-                    std::vector<byte> encryptedData = StringEncoder::hexToBytes(value.c_str());
+                    std::vector<byte> encryptedData = StringEncoder::base64Decode(value.c_str());
                     byte *decryptedData = nullptr;
                     size_t decryptedLen = RsaServer::getInstance()->decrypt(encryptedData.data(), encryptedData.size(), decryptedData);
-                    std::string email;
                     if (decryptedData && decryptedLen > 0)
                     {
-                        email = std::string(reinterpret_cast<char *>(decryptedData), decryptedLen);
+                        email = StringEncoder::bytesToString(decryptedData, decryptedLen);// std::string(reinterpret_cast<char *>(decryptedData), decryptedLen);
                         delete[] decryptedData;
                     }
                     else
@@ -110,12 +120,18 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                         // Split into two parts based on ':'
                         std::string part1 = valueStr.substr(0, colonPos);
                         std::string part2 = valueStr.substr(colonPos + 1);
-                        LOG_DEBUG << "part1: " << part1;
-                        LOG_DEBUG << "part2: " << part2;
                         std::vector<byte> pwdEnc = StringEncoder::base64Decode(part1.c_str());
+                        if (pwdEnc.empty()) {
+                            int status = CODES::BAD_REQUEAST;
+                            std::string errorMsg = Status(status).ss.str() + " Failed to decode password";
+                            LOG_ERROR << "Failed to decode password";
+                            response.setStatus(status);
+                            response.setStatusMsg(errorMsg);
+                            return;
+                        }
                         byte *decPwData = nullptr;
                         size_t pwLength = RsaServer::getInstance()->decrypt(pwdEnc.data(), pwdEnc.size(), decPwData);
-                        if (pwLength == 1024)
+                        if (pwLength == -1 || pwLength == SIZE_MAX)
                         {
                             int status = CODES::BAD_REQUEAST;
                             std::string errorMsg = Status(status).ss.str() + " Failed to decrypt password";
@@ -124,16 +140,11 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                             response.setStatusMsg(errorMsg);
                             return;
                         }
-                        std::string pwStr = StringEncoder::bytesToString(decPwData, pwLength);
-                        LOG_DEBUG << "part1: " << pwStr;
-                        LOG_DEBUG << "signed part1: " << part2;
-                        // Here, part1 is the password and part2 is the signature                        
-                        // You can choose which part to use as password, or combine them as needed
-                        // Here, as an example, we concatenate them with a colon
-
-                        // std::vector<byte> passwordBytes = StringEncoder::hexToBytes(part1.c_str());
-                        std::vector<byte> signatureBytes = StringEncoder::base64Decode(part2.c_str());
-                        bool isVerified = RsaClient::getInstance()->verify(pwStr.c_str(), signatureBytes.data(), signatureBytes.size());
+                        std::string password = StringEncoder::bytesToString(decPwData, pwLength);
+                        OPENSSL_free(decPwData);
+                    
+                        std::vector<byte> signatureBytes = StringEncoder::base64Decode(part2);
+                        bool isVerified = RsaClient::getInstance()->verify(password.c_str(), signatureBytes.data(), signatureBytes.size());
                         if (!isVerified)
                         {
                             int status = CODES::BAD_REQUEAST;
@@ -143,26 +154,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                             response.setStatusMsg(errorMsg);
                             return;
                         }
-                        std::vector<byte> encryptedPassword = StringEncoder::stringToBytes(part1.c_str());
-                        byte *decryptedPassword = nullptr;
-                        size_t decryptedPasswordLen = RsaClient::getInstance()->decrypt(
-                            encryptedPassword.data(), encryptedPassword.size(), decryptedPassword);
 
-                        std::string password;
-                        if (decryptedPassword && decryptedPasswordLen > 0)
-                        {
-                            password = std::string(reinterpret_cast<char *>(decryptedPassword), decryptedPasswordLen);
-                            delete[] decryptedPassword;
-                        }
-                        else
-                        {
-                            int status = CODES::BAD_REQUEAST;
-                            std::string errorMsg = Status(status).ss.str() + " Failed to decrypt password";
-                            LOG_ERROR << "Failed to decrypt password";
-                            response.setStatus(status);
-                            response.setStatusMsg(errorMsg);
-                            return;
-                        }
                         if (!isValidPassword(password))
                         {
                             int status = CODES::BAD_REQUEAST;
@@ -172,34 +164,85 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                             response.setStatusMsg(errorMsg);
                             return;
                         }
-                        password = part1.c_str(); // Use the first part as the password
+                        
+                        // gets hash the value of the password
+                        std::vector<byte> pwEnc = StringEncoder::stringToBytes(password);
+                        byte *md = nullptr;
+                        size_t hashLength = RsaServer::getInstance()->hashing(pwdEnc.data(), md);
+                        pwHash = StringEncoder::base64Encode(md, hashLength);
+                        delete[] md;
                     }
-                    else
-                    {
-                        int status = CODES::BAD_REQUEAST;
-                        std::string errorMsg = Status(status).ss.str() + " password sent... not signed";
-                        LOG_ERROR << "Invalid password format";
-                        response.setStatus(status);
-                        response.setStatusMsg(errorMsg);
-                        return;
-                    }
-                }
-                else
-                {
-                    int status = CODES::UNAUTHORIZE;
-                    std::string errorMsg = Status(status).ss.str() + " Unknown key: " + key;
-                    response.setStatus(status);
-                    response.setStatusMsg(errorMsg);
-                    return;
                 }
             }
             LOG_DEBUG << jsonObj.dump(4);
         }
-        response.setBody("Hello, World!");
+        if (email.empty() && pwHash.empty())
+        {
+            int status = CODES::BAD_REQUEAST;
+            std::string errorMsg = Status(status).ss.str() + " password sent... not signed";
+            LOG_ERROR << "Invalid password format";
+            response.setStatus(status);
+            response.setStatusMsg(errorMsg);
+            return;
+        }
+        else
+        {
+            std::string token;
+            indiepub::User user = getUsersController().getUserByEmail(email);
+            std::unique_ptr<JSONObject> body = std::make_unique<JSONObject>();
+            if (user.user_id().empty())
+            {
+                response.setStatus(CODES::UNAUTHORIZE);
+                response.setStatusMsg(Status(CODES::UNAUTHORIZE).ss.str());
+                body->put("email", "unrecognized");
+                response.setBody(body->c_str());
+            }
+            else 
+            {
+                indiepub::Credentials creds = getCredentialsController().getCredentialsByUserId(user.user_id());
+                if(creds.pw_hash() != pwHash) 
+                {
+                    response.setStatus(CODES::UNAUTHORIZE);
+                    response.setStatusMsg(Status(CODES::UNAUTHORIZE).ss.str());
+                    body->put("password", "wrong password");
+                    response.setBody(body->c_str());
+                }
+                else
+                {
+                    response.setStatus(CODES::CREATED);
+                    response.setStatusMsg(Status(CODES::CREATED).ss.str());
+                    body->put("user", user.to_json());
+
+                    byte* tokenBytes = nullptr;
+                    size_t tokenLength = RsaServer::getInstance()->sign(pwHash.c_str(), tokenBytes, "");
+                    std::string authToken = StringEncoder::bytesToHex(tokenBytes, tokenLength);
+
+                    if (getCredentialsController().insertCredentials(creds))
+                    {
+                        response.setStatus(CODES::CREATED);
+                        response.setStatusMsg(Status(CODES::CREATED).ss.str());
+                        std::unique_ptr<JSONObject> body = std::make_unique<JSONObject>();
+                        body->put("token", creds.auth_token());
+                        body->put("user", user.to_json());
+                        response.setBody(body->c_str());
+                        LOG_DEBUG << response.getBody();
+                    }
+                    else
+                    {
+                        response.setStatus(CODES::CONFLICT);
+                        response.setStatusMsg(Status(CODES::CONFLICT).ss.str());
+                        LOG_ERROR << response.getStatusMsg();
+                    }
+                }
+            }
+            LOG_DEBUG << "id: " << email;
+            LOG_DEBUG << "hash: " << pwHash;
+        }
+        
     }
     catch (const std::exception &e)
     {
-        std::cerr << e.what() << '\n';
+        LOG_ERROR << e.what();
         response.setStatus(CODES::INTERNAL_SERVER_ERROR);
         response.setStatusMsg(Status(CODES::INTERNAL_SERVER_ERROR).ss.str());
     }
@@ -208,9 +251,188 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
 
 void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response, Path *path)
 {
-    LOG_DEBUG << "SignUpHandler called";
-    response.setBody("Hello, World!");
-    response.setStatus(200);
+    std::string msg = request.getBody();
+    try
+    {
+        std::string email;
+        std::string pwHash;
+        std::string role;
+        if (!msg.empty())
+        {
+            auto jsonObj = JSONObject(msg);
+            for (const auto key : jsonObj.keys())
+            {
+                auto value = jsonObj[key];
+                if (key == "email")
+                {
+                    std::vector<byte> encryptedData = StringEncoder::base64Decode(value.c_str());
+                    byte *decryptedData = nullptr;
+                    size_t decryptedLen = RsaServer::getInstance()->decrypt(encryptedData.data(), encryptedData.size(), decryptedData);
+                    if (decryptedData && decryptedLen > 0)
+                    {
+                        email = StringEncoder::bytesToString(decryptedData, decryptedLen);// std::string(reinterpret_cast<char *>(decryptedData), decryptedLen);
+                        delete[] decryptedData;
+                    }
+                    else
+                    {
+                        int status = CODES::BAD_REQUEAST;
+                        std::string errorMsg = Status(status).ss.str() + " Failed to decrypt email";
+                        LOG_ERROR << "Failed to decrypt email";
+                        response.setStatus(status);
+                        response.setStatusMsg(errorMsg);
+                        return;
+                    }
+                    if (!isValidEmail(email))
+                    {
+                        int status = CODES::BAD_REQUEAST;
+                        std::string errorMsg = Status(status).ss.str() + " " + email;
+                        LOG_ERROR << "Invalid email format";
+                        response.setStatus(status);
+                        response.setStatusMsg(errorMsg);
+                        return;
+                    }
+                }
+                else if (key == "password")
+                {
+                    std::string valueStr = value.c_str();
+                    size_t colonPos = valueStr.find(':');
+                    std::vector<std::string> parts;
+                    if (colonPos != std::string::npos)
+                    {
+                        std::string part1 = valueStr.substr(0, colonPos);
+                        std::string part2 = valueStr.substr(colonPos + 1);
+                        std::vector<byte> pwdEnc = StringEncoder::base64Decode(part1.c_str());
+                        if (pwdEnc.empty()) {
+                            int status = CODES::BAD_REQUEAST;
+                            std::string errorMsg = Status(status).ss.str() + " Failed to decode password";
+                            LOG_ERROR << "Failed to decode password";
+                            response.setStatus(status);
+                            response.setStatusMsg(errorMsg);
+                            return;
+                        }
+                        byte *decPwData = nullptr;
+                        size_t pwLength = RsaServer::getInstance()->decrypt(pwdEnc.data(), pwdEnc.size(), decPwData);
+                        if (pwLength == -1 || pwLength == SIZE_MAX)
+                        {
+                            int status = CODES::BAD_REQUEAST;
+                            std::string errorMsg = Status(status).ss.str() + " Failed to decrypt password";
+                            LOG_ERROR << "Failed to decrypt password";
+                            response.setStatus(status);
+                            response.setStatusMsg(errorMsg);
+                            return;
+                        }
+                        std::string password = StringEncoder::bytesToString(decPwData, pwLength);
+                        OPENSSL_free(decPwData);
+
+                        std::vector<byte> signatureBytes = StringEncoder::base64Decode(part2);
+                        bool isVerified = RsaClient::getInstance()->verify(password.c_str(), signatureBytes.data(), signatureBytes.size());
+                        if (!isVerified)
+                        {
+                            int status = CODES::BAD_REQUEAST;
+                            std::string errorMsg = Status(status).ss.str() + " Password signature verification failed";
+                            LOG_ERROR << "Password signature verification failed";
+                            response.setStatus(status);
+                            response.setStatusMsg(errorMsg);
+                            return;
+                        }
+
+                        if (!isValidPassword(password))
+                        {
+                            int status = CODES::BAD_REQUEAST;
+                            std::string errorMsg = Status(status).ss.str() + " Weak password";
+                            LOG_ERROR << "Invalid password format";
+                            response.setStatus(status);
+                            response.setStatusMsg(errorMsg);
+                            return;
+                        }
+                        
+                        // gets hash the value of the password
+                        std::vector<byte> pwEnc = StringEncoder::stringToBytes(password);
+                        byte *md = nullptr;
+                        size_t hashLength = RsaServer::getInstance()->hashing(pwdEnc.data(), md);
+                        pwHash = StringEncoder::base64Encode(md, hashLength);
+                        delete[] md;
+                    }
+                }
+                else if (key == "role")
+                {
+                    std::vector<byte> encryptedData = StringEncoder::base64Decode(value.c_str());
+                    byte *decryptedData = nullptr;
+                    size_t decryptedLen = RsaServer::getInstance()->decrypt(encryptedData.data(), encryptedData.size(), decryptedData);
+                    if (decryptedData && decryptedLen > 0)
+                    {
+                        role = StringEncoder::bytesToString(decryptedData, decryptedLen);
+                        delete[] decryptedData;
+                    }
+                    else
+                    {
+                        int status = CODES::BAD_REQUEAST;
+                        std::string errorMsg = Status(status).ss.str() + " Failed to decrypt email";
+                        LOG_ERROR << "Failed to decrypt email";
+                        response.setStatus(status);
+                        response.setStatusMsg(errorMsg);
+                        return;
+                    }
+                }
+            }
+            LOG_DEBUG << jsonObj.dump(4);
+        }
+        if (email.empty() && pwHash.empty() && role.empty())
+        {
+            int status = CODES::BAD_REQUEAST;
+            std::string errorMsg = Status(status).ss.str() + " signup error";
+            LOG_ERROR << "Invalid password format";
+            response.setStatus(status);
+            response.setStatusMsg(errorMsg);
+            return;
+        }
+        else
+        {
+            indiepub::User user = getUsersController().getUserByEmail(email);
+            if (user.user_id().empty())
+            {
+                user.user_id(UUID::random());
+                user.email(email);
+                user.role(role);
+                user.name(user.user_id());
+                user.created_at(std::time(nullptr));
+                if (getUsersController().insertUser(user)) 
+                {
+                    byte* tokenBytes = nullptr;
+                    size_t tokenLength = RsaServer::getInstance()->sign(pwHash.c_str(), tokenBytes, "");
+                    std::string authToken = StringEncoder::bytesToHex(tokenBytes, tokenLength);
+                    indiepub::Credentials creds(
+                            user.user_id(), 
+                            authToken, 
+                            pwHash
+                        );
+                    if (getCredentialsController().insertCredentials(creds))
+                    {
+                        response.setStatus(CODES::CREATED);
+                        response.setStatusMsg(Status(CODES::CREATED).ss.str());
+                        std::unique_ptr<JSONObject> body = std::make_unique<JSONObject>();
+                        body->put("token", creds.auth_token());
+                        body->put("user", user.to_json());
+                        response.setBody(body->c_str());
+                        LOG_DEBUG << response.getBody();
+                    }
+                    else 
+                    {
+                        response.setStatus(CODES::CONFLICT);
+                        response.setStatusMsg(Status(CODES::CONFLICT).ss.str());
+                        LOG_ERROR << response.getStatusMsg();
+                    }
+                    
+                }
+            }
+        }
+    }
+    catch (const std::exception &e)
+    {
+        LOG_ERROR << e.what();
+        response.setStatus(CODES::INTERNAL_SERVER_ERROR);
+        response.setStatusMsg(Status(CODES::INTERNAL_SERVER_ERROR).ss.str());
+    }
 }
 
 void Endpoints::fetchEventsHandler(const HttpRequest &request, HttpResponse &response, Path *path)

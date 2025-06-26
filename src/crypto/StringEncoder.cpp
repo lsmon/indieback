@@ -35,22 +35,21 @@ std::string StringEncoder::base64Encode(const byte *bytes, size_t length)
     return encodedData;
 }
 
-std::vector<byte> StringEncoder::base64Decode(const std::string &encodedData)
+std::vector<byte> StringEncoder::base64Decode(const std::string &encoded)
 {
-    BIO *bio, *b64;
-    int decodeLen = encodedData.length();
-    std::vector<byte> decodedData(decodeLen);
-
-    b64 = BIO_new(BIO_f_base64());
-    bio = BIO_new_mem_buf(encodedData.data(), decodeLen);
+    BIO* bio = BIO_new_mem_buf(encoded.c_str(), encoded.size());
+    BIO* b64 = BIO_new(BIO_f_base64());
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL); // Handle base64 without newlines
     bio = BIO_push(b64, bio);
-
-    decodeLen = BIO_read(bio, decodedData.data(), decodeLen);
-    decodedData.resize(decodeLen);
-
+    std::vector<unsigned char> decoded((encoded.size() * 3) / 4); // Approximate size
+    int len = BIO_read(bio, decoded.data(), decoded.size());
     BIO_free_all(bio);
-
-    return decodedData;
+    if (len > 0) {
+        decoded.resize(len); // Adjust to actual size
+    } else {
+        decoded.clear(); // Decoding failed
+    }
+    return decoded;
 }
 
 std::string StringEncoder::bytesToHex(const byte *bytes, size_t length)

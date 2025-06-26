@@ -25,6 +25,13 @@ namespace indiepub {
         std::string name() const;
         std::time_t created_at() const;
 
+        // Setters
+        void user_id(const std::string& user_id);
+        void email(const std::string& email);
+        void role(const std::string& role);
+        void name(const std::string& name);
+        void created_at(const std::time_t& created_at);
+
         // JSON serialization
         std::string to_json() const;
 

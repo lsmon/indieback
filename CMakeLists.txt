@@ -17,6 +17,12 @@ set(CONFIG ${CMAKE_SOURCE_DIR}/include/config.h)
 
 set(CMK_SRC_DIR ${CMAKE_SOURCE_DIR})
 
+message(STATUS "Build TYPE: ${CMAKE_BUILD_TYPE}")
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    set(DEBUG_MODE "DEBUG")
+endif()
+
+
 configure_file(logconfig.h.in ${LOG_CONFIG})
 configure_file(logging.properties.in ${PROPERTY})
 configure_file(config.h.in ${CONFIG})
@@ -58,6 +64,7 @@ set(INDIE_INC
         ${CMAKE_SOURCE_DIR}/include/backend/models/TicketByUser.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/models/PostsByDate.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/models/DailyTicketSales.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/models/Credentials.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/UsersController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/VenuesController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/BandsController.hpp
@@ -67,6 +74,7 @@ set(INDIE_INC
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/TicketsByEventController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/TicketsByUserController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/DailyTicketSalesController.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/CredentialsController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/api/Endpoints.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/api/RESTfulAPI.hpp)
 
@@ -88,6 +96,7 @@ set(INDIE_SRC
         ${CMAKE_SOURCE_DIR}/src/backend/models/TicketByEvent.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/models/TicketByUser.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/models/PostsByDate.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/models/Credentials.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/models/DailyTicketSales.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/UsersController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/VenuesController.cpp
@@ -98,6 +107,7 @@ set(INDIE_SRC
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/TicketsByEventController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/TicketsByUserController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/DailyTicketSalesController.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/CredentialsController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/api/Endpoints.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/api/RESTfulAPI.cpp)
 

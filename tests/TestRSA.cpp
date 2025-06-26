@@ -11,14 +11,13 @@
 static std::string originalText = R"(The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. The quick brown fox jumps over the lazy dog, showcasing a classic pangram used for typing practice and font display. ABCDEFGHIJKLMNOPQRSTUVWXYZ123456)";
 std::unique_ptr<AuthCrypto> authCrypto = std::make_unique<AuthCrypto>("indieback");
 
-std::string testEncryption() 
-{
-    if (!authCrypto->doesPublicKeyExists()) {
-        std::cerr << "Private key does not exist. Generating new key pair." << std::endl;
+std::string testEncryption() {
+     if (!authCrypto->doesPrivateKeyExists()) {
+        std::cerr << "Public key does not exist. Generating new key pair." << std::endl;
         return "";
     } else {
-        std::cout << "Private key exists." << std::endl;
-        authCrypto->loadPublicKey();
+        std::cout << "Public key exists." << std::endl;
+        authCrypto->loadPrivateKey("");
     }
     
     std::vector<byte> data = StringEncoder::stringToBytes(originalText);
@@ -34,12 +33,12 @@ std::string testEncryption()
 
 std::string testDecryption(std::string encryptedText) 
 {
-    if (!authCrypto->doesPrivateKeyExists()) {
-        std::cerr << "Public key does not exist. Generating new key pair." << std::endl;
+    if (!authCrypto->doesPublicKeyExists()) {
+        std::cerr << "Private key does not exist. Generating new key pair." << std::endl;
         return "";
     } else {
-        std::cout << "Public key exists." << std::endl;
-        authCrypto->loadPrivateKey("");
+        std::cout << "Private key exists." << std::endl;
+        authCrypto->loadPublicKey();
     }
 
     std::vector<byte> data = StringEncoder::base64Decode(encryptedText);
@@ -47,7 +46,6 @@ std::string testDecryption(std::string encryptedText)
 
     size_t decryptedSize = authCrypto->decrypt(data.data(), data.size(), decryptedData);
     std::string decryptedText = StringEncoder::bytesToString(decryptedData, decryptedSize);
-
 
     assert(originalText == decryptedText && "Decrypted text matches the original text");
 

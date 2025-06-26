@@ -8,17 +8,6 @@
 #define PUB_KEY_POSTFIX "_pub.pem"
 #define PRV_KEY_POSTFIX "_prv.pem"
 
-// #define ENABLE_TESTS true
-
-// #define APPLE @IS_APPLE@
-// #define LINUX @IS_UNIX@
-// #define MSVC @IS_MSVC@
-
-// #define CONFIG_PROP_FILE "@CONFIG_PROP@"
-// #define KB 1024
-// #define MB KB*KB
-// #define GB KB*KB*KB
-
 #define PRV_KEY_ARCHIVE "@CMK_SRC_DIR@/resources"
 #define PUB_KEY_ARCHIVE "@CMK_SRC_DIR@/resources"
 #define BLOCKCHAIN_ARCHIVE "@CMK_SRC_DIR@/blockchain"
@@ -34,8 +23,21 @@
 #define RSA_KEY_SIZE 4096
 
 typedef unsigned char byte;
-//#define DEBUG
 
-//#define DISCOVERY_MODE
+#ifdef @DEBUG_MODE@
+#define DEBUG_MODE true
+#endif
+
+#ifdef DEBUG_MODE
+#define CASS_CP "172.18.0.2"
+#define CASS_UN "cassandra"
+#define CASS_PW "cassandra"
+#define CASS_KS "indie_pub"
+#else
+#define CASS_CP "172.18.0.2"
+#define CASS_UN "cassandra"
+#define CASS_PW "cassandra"
+#define CASS_KS "indie_pub"
+#endif
 
 #endif // __CONFIG_H__

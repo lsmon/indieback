@@ -6,6 +6,8 @@
 #include <http/Response.hpp>
 #include <http/Request.hpp>
 #include <crypto/AuthCrypto.hpp>
+#include <backend/controllers/CredentialsController.hpp>
+#include <backend/controllers/UsersController.hpp>
 #include <string>
 #include <iostream>
 #include <stdexcept>
@@ -14,10 +16,13 @@
 class Endpoints
 {
 private:
+
     static bool isValidEmail(const std::string &email);
     
     static bool isValidPassword(const std::string &password);
-    
+
+    static indiepub::CredentialsController getCredentialsController();
+    static indiepub::UsersController getUsersController();
 
 public:
     Endpoints(/* args */);
