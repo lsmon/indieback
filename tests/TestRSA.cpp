@@ -73,7 +73,7 @@ std::string signing(std::string text) {
     return signatureHex;
 }
 
-bool verifySignature(std::string text, std::string signatureHex) {
+bool verifySignature(std::string text, std::string signature) {
     if (!authCrypto->doesPublicKeyExists()) {
         std::cerr << "Public key does not exist. Generating new key pair." << std::endl;
         return false;
@@ -82,7 +82,7 @@ bool verifySignature(std::string text, std::string signatureHex) {
         authCrypto->loadPublicKey();
     }
 
-    std::vector<byte> signatureBytes = StringEncoder::base64Decode(signatureHex);
+    std::vector<byte> signatureBytes = StringEncoder::base64Decode(signature);
     bool isVerified = authCrypto->verify(text.c_str(), signatureBytes.data(), signatureBytes.size());
     
     return isVerified;
