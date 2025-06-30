@@ -71,10 +71,10 @@ def build():
         cmake_bin = "/opt/homebrew/bin/cmake"
     else :
         cmake_bin = "cmake"
-    print(cmake_bin + " --no-warn-unused-cli -DBUILD_TEST=OFF -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -S" + path + " -B" + build_path)
+    print(cmake_bin + " --no-warn-unused-cli -DBUILD_TESTING=OFF -DBUILD_LIB=OFF -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -S" + path + " -B" + build_path)
     print(cmake_bin + " --build " + build_path + " --config Debug --target all -j 12 --")
     run_command(cmake_bin + " --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -S" + path + " -B" + build_path)
-    run_command(cmake_bin + " --build " + build_path + " --config Debug --target all -j 12")
+    run_command(cmake_bin + " --build " + build_path + " --config Debug --target all")
 
     print("Building completed.")
 
