@@ -86,7 +86,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                     std::vector<byte> encryptedData = StringEncoder::base64Decode(value.c_str());
                     byte *decryptedData = nullptr;
                     size_t decryptedLen = RsaServer::getInstance()->decrypt(encryptedData.data(), encryptedData.size(), decryptedData);
-                    if (decryptedData && decryptedLen > 0)
+                    if (decryptedData && decryptedLen > 0 && decryptedLen < SIZE_MAX)
                     {
                         email = StringEncoder::bytesToString(decryptedData, decryptedLen);// std::string(reinterpret_cast<char *>(decryptedData), decryptedLen);
                         delete[] decryptedData;

@@ -27,7 +27,7 @@ if(OPENSSL_FOUND)
             target_include_directories(indieback_rsa_test PUBLIC ${CMAKE_SOURCE_DIR}/include ${OPENSSL_INCLUDE_DIR})
             target_link_libraries(indieback_rsa_test indieback ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs ${OPENSSL_LIBRARIES})
 
-            add_executable(indieback_api_test ${CMAKE_SOURCE_DIR}/tests/TestRSA.cpp ${INDIE_CRYPTO_INC} ${INDIE_CRYPTO_SRC} ${THIRD_PARTY_INC})
+            add_executable(indieback_api_test ${CMAKE_SOURCE_DIR}/tests/TestApi.cpp ${INDIE_CRYPTO_INC} ${INDIE_CRYPTO_SRC} ${THIRD_PARTY_INC})
             target_include_directories(indieback_api_test PUBLIC ${CMAKE_SOURCE_DIR}/include ${OPENSSL_INCLUDE_DIR})
             target_link_libraries(indieback_api_test indieback ${THIRD_PARTY_LIB} ZLIB::ZLIB stdc++fs ${OPENSSL_LIBRARIES})
         endif()

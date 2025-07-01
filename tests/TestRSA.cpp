@@ -12,14 +12,6 @@ static std::string originalText = R"(The quick brown fox jumps over the lazy dog
 std::unique_ptr<AuthCrypto> authCrypto = std::make_unique<AuthCrypto>("indieback");
 
 std::string testEncryption() {
-     if (!authCrypto->doesPrivateKeyExists()) {
-        std::cerr << "Public key does not exist. Generating new key pair." << std::endl;
-        return "";
-    } else {
-        std::cout << "Public key exists." << std::endl;
-        authCrypto->loadPrivateKey("");
-    }
-    
     std::vector<byte> data = StringEncoder::stringToBytes(originalText);
     byte* encryptedData = nullptr;
 
@@ -33,14 +25,6 @@ std::string testEncryption() {
 
 std::string testDecryption(std::string encryptedText) 
 {
-    if (!authCrypto->doesPublicKeyExists()) {
-        std::cerr << "Private key does not exist. Generating new key pair." << std::endl;
-        return "";
-    } else {
-        std::cout << "Private key exists." << std::endl;
-        authCrypto->loadPublicKey();
-    }
-
     std::vector<byte> data = StringEncoder::base64Decode(encryptedText);
     byte* decryptedData = nullptr;
 
@@ -55,14 +39,6 @@ std::string testDecryption(std::string encryptedText)
 }
 
 std::string signing(std::string text) {
-    if (!authCrypto->doesPrivateKeyExists()) {
-        std::cerr << "Private key does not exist. Generating new key pair." << std::endl;
-        return "";
-    } else {
-        std::cout << "Private key exists." << std::endl;
-        authCrypto->loadPrivateKey("");
-    }
-
     byte* signature = nullptr;
     size_t signature_length = authCrypto->sign(text.c_str(), signature, "");
     std::string signatureHex = StringEncoder::base64Encode(signature, signature_length);
@@ -74,14 +50,6 @@ std::string signing(std::string text) {
 }
 
 bool verifySignature(std::string text, std::string signature) {
-    if (!authCrypto->doesPublicKeyExists()) {
-        std::cerr << "Public key does not exist. Generating new key pair." << std::endl;
-        return false;
-    } else {
-        std::cout << "Public key exists." << std::endl;
-        authCrypto->loadPublicKey();
-    }
-
     std::vector<byte> signatureBytes = StringEncoder::base64Decode(signature);
     bool isVerified = authCrypto->verify(text.c_str(), signatureBytes.data(), signatureBytes.size());
     

@@ -43,7 +43,7 @@ else ()
     message(STATUS "logpp is installed")
 endif ()
 
-set(JSON_INC ${CMAKE_SOURCE_DIR}/include)awd
+set(JSON_INC ${CMAKE_SOURCE_DIR}/include)
 set(JSON_LIB ${CMAKE_SOURCE_DIR}/lib/lib_json-${JSON_V}.a)
 
 message(STATUS "caching installing")

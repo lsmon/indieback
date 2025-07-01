@@ -75,6 +75,14 @@ void testCassandraConnection()
         cassandra.executeQuery(createIndexRole);
         cassandra.executeQuery(createIndexName);
 
+        std::string createCredentialsTable(R"(
+            CREATE TABLE IF NOT EXISTS indie_pub.credentials (
+                user_id UUID PRIMARY KEY,
+                auth_token TEXT,
+                pw_hash TEXT);)");
+        
+        cassandra.executeQuery(createCredentialsTable);
+
         std::string createVenuesTable(R"(
             CREATE TABLE IF NOT EXISTS indie_pub.venues (
                 venue_id UUID,
