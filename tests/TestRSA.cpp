@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include <cassert>
@@ -25,6 +26,10 @@ std::string testEncryption() {
 
 std::string testDecryption(std::string encryptedText) 
 {
+    encryptedText.erase(
+        std::remove(encryptedText.begin(), encryptedText.end(), '\n'),
+        encryptedText.end()
+    );
     std::vector<byte> data = StringEncoder::base64Decode(encryptedText);
     byte* decryptedData = nullptr;
 
@@ -41,7 +46,7 @@ std::string testDecryption(std::string encryptedText)
 std::string signing(std::string text) {
     byte* signature = nullptr;
     size_t signature_length = authCrypto->sign(text.c_str(), signature, "");
-    std::string signatureHex = StringEncoder::base64Encode(signature, signature_length);
+    std::string signatureHex = StringEncoder::bytesToHex(signature, signature_length);
     
     // Clean up
     delete[] signature;
@@ -50,7 +55,7 @@ std::string signing(std::string text) {
 }
 
 bool verifySignature(std::string text, std::string signature) {
-    std::vector<byte> signatureBytes = StringEncoder::base64Decode(signature);
+    std::vector<byte> signatureBytes = StringEncoder::hexToBytes(signature);
     bool isVerified = authCrypto->verify(text.c_str(), signatureBytes.data(), signatureBytes.size());
     
     return isVerified;

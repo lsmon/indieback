@@ -5,8 +5,9 @@
 #include <crypto/RsaClient.hpp>
 #include <crypto/RsaServer.hpp>
 #include <crypto/StringEncoder.hpp>
+#include <crypto/Hash.hpp>
 #include <util/UUID.hpp>
-#include "config.h"
+#include <config.h>
 
 Endpoints::Endpoints(/* args */)
 {
@@ -75,6 +76,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
     {
         std::string email;
         std::string pwHash;
+        std::unique_ptr<JSONObject> body = std::make_unique<JSONObject>();
         if (!msg.empty())
         {
             auto jsonObj = JSONObject(msg);
@@ -98,6 +100,8 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                         LOG_ERROR << "Failed to decrypt email";
                         response.setStatus(status);
                         response.setStatusMsg(errorMsg);
+                        body->put("error", "Failed to decrypt email");
+                        response.setBody(body->c_str());
                         return;
                     }
                     if (!isValidEmail(email))
@@ -107,6 +111,8 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                         LOG_ERROR << "Invalid email format";
                         response.setStatus(status);
                         response.setStatusMsg(errorMsg);
+                        body->put("error", "Invalid email format");
+                        response.setBody(body->c_str());
                         return;
                     }
                 }
@@ -127,6 +133,8 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                             LOG_ERROR << "Failed to decode password";
                             response.setStatus(status);
                             response.setStatusMsg(errorMsg);
+                            body->put("error", "Failed to decode password");
+                            response.setBody(body->c_str());
                             return;
                         }
                         byte *decPwData = nullptr;
@@ -138,6 +146,11 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                             LOG_ERROR << "Failed to decrypt password";
                             response.setStatus(status);
                             response.setStatusMsg(errorMsg);
+                            body->put("error", "Failed to decrypt password");
+                            response.setBody(body->c_str());
+                            if (decPwData) {
+                                OPENSSL_free(decPwData);
+                            }
                             return;
                         }
                         std::string password = StringEncoder::bytesToString(decPwData, pwLength);
@@ -152,6 +165,8 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                             LOG_ERROR << "Password signature verification failed";
                             response.setStatus(status);
                             response.setStatusMsg(errorMsg);
+                            body->put("error", "Password signature verification failed");
+                            response.setBody(body->c_str());
                             return;
                         }
 
@@ -162,15 +177,13 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                             LOG_ERROR << "Invalid password format";
                             response.setStatus(status);
                             response.setStatusMsg(errorMsg);
+                            body->put("error", "Weak password");
+                            response.setBody(body->c_str());
                             return;
                         }
                         
                         // gets hash the value of the password
-                        std::vector<byte> pwEnc = StringEncoder::stringToBytes(password);
-                        byte *md = nullptr;
-                        size_t hashLength = RsaServer::getInstance()->hashing(pwdEnc.data(), md);
-                        pwHash = StringEncoder::base64Encode(md, hashLength);
-                        delete[] md;
+                        pwHash = hashing(password);
                     }
                 }
             }
@@ -183,18 +196,21 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
             LOG_ERROR << "Invalid password format";
             response.setStatus(status);
             response.setStatusMsg(errorMsg);
+            body->put("error", "Invalid password format");
+            response.setBody(body->c_str());
+            LOG_DEBUG << response.getBody();
             return;
         }
         else
         {
             std::string token;
             indiepub::User user = getUsersController().getUserByEmail(email);
-            std::unique_ptr<JSONObject> body = std::make_unique<JSONObject>();
+            
             if (user.user_id().empty())
             {
                 response.setStatus(CODES::UNAUTHORIZE);
                 response.setStatusMsg(Status(CODES::UNAUTHORIZE).ss.str());
-                body->put("email", "unrecognized");
+                body->put("email", "Not registered");
                 response.setBody(body->c_str());
             }
             else 
@@ -204,7 +220,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                 {
                     response.setStatus(CODES::UNAUTHORIZE);
                     response.setStatusMsg(Status(CODES::UNAUTHORIZE).ss.str());
-                    body->put("password", "wrong password");
+                    body->put("error", "wrong password");
                     response.setBody(body->c_str());
                 }
                 else
@@ -213,10 +229,8 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                     response.setStatusMsg(Status(CODES::CREATED).ss.str());
                     body->put("user", user.to_json());
 
-                    byte* tokenBytes = nullptr;
-                    size_t tokenLength = RsaServer::getInstance()->sign(pwHash.c_str(), tokenBytes, "");
-                    std::string authToken = StringEncoder::bytesToHex(tokenBytes, tokenLength);
-
+                    std::string token = tokenGenerator(pwHash);
+                    creds.set_auth_token(token);
                     if (getCredentialsController().insertCredentials(creds))
                     {
                         response.setStatus(CODES::CREATED);
@@ -249,6 +263,13 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
     return;
 }
 
+std::string Endpoints::tokenGenerator(std::string &pwHash)
+{
+    byte *tokenBytes = nullptr;
+    size_t tokenLength = RsaServer::getInstance()->sign(pwHash.c_str(), tokenBytes, "");
+    std::string authToken = StringEncoder::bytesToHex(tokenBytes, tokenLength);
+    return authToken;
+}
 void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response, Path *path)
 {
     std::string msg = request.getBody();
@@ -347,11 +368,7 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
                         }
                         
                         // gets hash the value of the password
-                        std::vector<byte> pwEnc = StringEncoder::stringToBytes(password);
-                        byte *md = nullptr;
-                        size_t hashLength = RsaServer::getInstance()->hashing(pwdEnc.data(), md);
-                        pwHash = StringEncoder::base64Encode(md, hashLength);
-                        delete[] md;
+                        pwHash = hashing(password);
                     }
                 }
                 else if (key == "role")
@@ -398,12 +415,11 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
                 user.created_at(std::time(nullptr));
                 if (getUsersController().insertUser(user)) 
                 {
-                    byte* tokenBytes = nullptr;
-                    size_t tokenLength = RsaServer::getInstance()->sign(pwHash.c_str(), tokenBytes, "");
-                    std::string authToken = StringEncoder::bytesToHex(tokenBytes, tokenLength);
+                    std::string token = tokenGenerator(pwHash);
+
                     indiepub::Credentials creds(
                             user.user_id(), 
-                            authToken, 
+                            token, 
                             pwHash
                         );
                     if (getCredentialsController().insertCredentials(creds))
@@ -435,6 +451,15 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
     }
 }
 
+std::string Endpoints::hashing(std::string &password)
+{
+    std::vector<byte> pwEnc = StringEncoder::stringToBytes(password);
+    byte *md = nullptr;
+    
+    std::string pwHash = StringEncoder::bytesToHex(Hash::sha256(pwEnc.data()), pwEnc.size());
+    delete[] md;
+    return pwHash;
+}
 void Endpoints::fetchEventsHandler(const HttpRequest &request, HttpResponse &response, Path *path)
 {
     LOG_DEBUG << "getFetchEventsHandler called";

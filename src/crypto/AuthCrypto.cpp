@@ -31,24 +31,29 @@ AuthCrypto::~AuthCrypto() {
 }
 
 void AuthCrypto::destroy() {
-    if (public_key != nullptr) {
-        EVP_PKEY_free(public_key);
-        this->public_key = nullptr;
+    try {
+        if (public_key != nullptr) {
+            EVP_PKEY_free(public_key);
+            this->public_key = nullptr;
+        }
+        if (private_key != nullptr) {
+            EVP_PKEY_free(private_key);
+            this->private_key = nullptr;
+        }
+        if (ctx != nullptr) {
+            EVP_PKEY_CTX_free(ctx);
+            ctx = nullptr;
+        }
     }
-    if (private_key != nullptr) {
-        EVP_PKEY_free(private_key);
-        this->private_key = nullptr;
-    }
-    if (ctx != nullptr) {
-        EVP_PKEY_CTX_free(ctx);
-        this->ctx = nullptr;
-    }
+    catch (const std::exception &e) {
+        LOG_ERROR << "Error during destruction: " << e.what();
+    }   
 }
 
 bool AuthCrypto::generatePublicKey(EVP_PKEY *pkey)
 {
     if (pkey == nullptr) {
-        destroy();
+
         std::cerr << "rsa key creation has failed" << std::endl;
         return false;
     }
@@ -284,7 +289,6 @@ size_t AuthCrypto::sign(const char *msg, unsigned char *&sig, const char *passwo
         OPENSSL_free(sig);
         return -1;
     }
-    destroy();
     EVP_MD_CTX_free(md_ctx);
     return sig_len;
 }

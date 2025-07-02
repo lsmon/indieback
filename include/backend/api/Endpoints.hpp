@@ -29,9 +29,13 @@ public:
 
     ~Endpoints();
 
-    static void signInHandler(const HttpRequest &request, HttpResponse &response, Path* path);
+    static void signInHandler(const HttpRequest &request, HttpResponse &response, Path *path);
 
-    static void signUpHandler(const HttpRequest &request, HttpResponse &response, Path* path);
+    static std::string tokenGenerator(std::string &pwHash);
+
+    static void signUpHandler(const HttpRequest &request, HttpResponse &response, Path *path);
+
+    static std::string hashing(std::string &value);
 
     static void fetchEventsHandler(const HttpRequest &request, HttpResponse &response, Path* path);
 

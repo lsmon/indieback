@@ -23,6 +23,11 @@ namespace indiepub
         std::string auth_token() const;
         std::string pw_hash() const;
 
+        // Setters
+        void set_user_id(const std::string &user_id);
+        void set_auth_token(const std::string &auth_token);
+        void set_pw_hash(const std::string &pw_hash);
+
         //JSON serialization
         std::string to_json() const;
 

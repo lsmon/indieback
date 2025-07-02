@@ -21,7 +21,11 @@ void RESTfulAPI::initEndpointHandlers() {
     apiServer->setHttpHandler(HttpMethod::GET, "/posts", Endpoints::fetchPostsHandler);
     LOG_INFO << "/posts POST";
     apiServer->setHttpHandler(HttpMethod::POST, "/posts", Endpoints::createPostHandler);
-    
+    LOG_INFO << "/tests GET";
+    apiServer->setHttpHandler(HttpMethod::GET, "/test", [](const HttpRequest &request, HttpResponse &response, Path *path) {
+        response.setBody("Hello, World!");
+        response.setStatus(200);
+    });
 
     LOG_INFO << "Server listening on localhost : 8008 ";
     apiServer->run();

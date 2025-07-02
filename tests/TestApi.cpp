@@ -6,6 +6,7 @@
 #include <crypto/StringEncoder.hpp>
 #include <memory>
 #include <JSON.hpp>
+#include <util/logging/Log.hpp>
 
 std::shared_ptr<ApiClient> apiClient;
 std::shared_ptr<AuthCrypto> rsaServer = RsaServer::getInstance();
@@ -17,6 +18,30 @@ std::string password = "Passw0rd!!";
 
 std::string name = "Tester Indiepub";
 std::string role = "fan";
+
+
+bool isApiUp() {
+    try
+    {
+        if (apiClient == nullptr)
+        {
+            apiClient = std::make_shared<ApiClient>();
+        }
+        
+        std::string testUrl = baseUrl + "/test";
+
+        std::unordered_map<std::string, std::string> headers = {
+            {"Content-Type", "application/json"}};
+        auto response = apiClient->get(testUrl, "", headers);
+        LOG_INFO << response.getBody(); // Ensure we read the body to avoid issues with the connection
+        return response.getStatus() == 200;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "API is down: " << e.what() << '\n';
+        return false;
+    }
+}
 
 void testSginInHandler()
 {
@@ -52,13 +77,15 @@ void testSginInHandler()
         obj->put("email", emailEncStr);
         obj->put("password", pwEncStr + ":" + signature);
 
-        std::string login = baseUrl + "/login";
+        std::string signinUrl = baseUrl + "/login";
 
         std::unordered_map<std::string, std::string> headers = {
             {"Content-Type", "application/json"}};
-        auto response = apiClient->post(baseUrl, obj->c_str(), headers);
-        std::cout << "signin status response: " << response.getStatus() << std::endl;
-        std::cout << "signin body response: " << response.getBody() << std::endl;
+        LOG_DEBUG << "Signin URL: " << signinUrl;
+        LOG_DEBUG << "Signin Object: " << obj->dump();
+        auto response = apiClient->post(signinUrl, obj->c_str(), headers);
+        LOG_DEBUG << "signin status response: " << response.getStatus();
+        LOG_DEBUG << "signin body response: " << response.getBody();
     }
     catch (const std::exception &e)
     {
@@ -99,13 +126,16 @@ void testSginUpHandler()
         obj->put("role", roleEncStr);
         obj->put("password", pwEncStr + ":" + signature);
 
-        std::string login = baseUrl + "/signup";
+        std::string signupUrl = baseUrl + "/signup";
+
+        LOG_DEBUG << "Signup URL: " << signupUrl;
+        LOG_DEBUG << "Signup Object: " << obj->dump();
 
         std::unordered_map<std::string, std::string> headers = {
             {"Content-Type", "application/json"}};
-        auto response = apiClient->post(baseUrl, obj->c_str(), headers);
-        std::cout << "signup status response: " << response.getStatus() << std::endl;
-        std::cout << "signup body response: " << response.getBody() << std::endl;
+        auto response = apiClient->post(signupUrl, obj->c_str(), headers);
+        LOG_DEBUG << "signup status response: " << response.getStatus();
+        LOG_DEBUG << "signup body response: " << response.getBody();
     }
     catch (const std::exception &e)
     {
@@ -115,7 +145,12 @@ void testSginUpHandler()
 
 int main()
 {
-    testSginUpHandler();
+    if (!isApiUp())
+    {
+        std::cerr << "API is not running. Please start the server first." << std::endl;
+        return EXIT_FAILURE;
+    }
+    // testSginUpHandler();
     testSginInHandler();
     return EXIT_SUCCESS;
 }
