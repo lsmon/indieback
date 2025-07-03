@@ -7,9 +7,8 @@ const std::string indiepub::Credentials::PK_CREDENTIAL_ID = "user_id";
 const std::string indiepub::Credentials::IDX_CREDENTIAL_AUTH_TOKEN = "auth_token";
 const std::string indiepub::Credentials::IDX_CREDENTIAL_PW_HASH = "pw_hash";
 
-
 indiepub::Credentials::Credentials(const std::string &user_id, const std::string &token, const std::string &pw_hash)
-                                  : user_id_(user_id), auth_token_(token), pw_hash_(pw_hash)
+    : user_id_(user_id), auth_token_(token), pw_hash_(pw_hash)
 {
 }
 
@@ -28,7 +27,22 @@ std::string indiepub::Credentials::pw_hash() const
     return pw_hash_;
 }
 
-std::string indiepub::Credentials::to_json() const 
+void indiepub::Credentials::set_user_id(const std::string &user_id)
+{
+    user_id_ = user_id;
+}
+
+void indiepub::Credentials::set_auth_token(const std::string &auth_token)
+{
+    auth_token_ = auth_token;
+}
+
+void indiepub::Credentials::set_pw_hash(const std::string &pw_hash)
+{
+    pw_hash_ = pw_hash;
+}
+
+std::string indiepub::Credentials::to_json() const
 {
     std::unique_ptr<JSONObject> json = std::make_unique<JSONObject>();
     json->put("user_id", user_id_);
@@ -37,7 +51,7 @@ std::string indiepub::Credentials::to_json() const
     return json->str();
 }
 
-indiepub::Credentials indiepub::Credentials::from_json(const std::string &json) 
+indiepub::Credentials indiepub::Credentials::from_json(const std::string &json)
 {
     Credentials creds;
     std::unique_ptr<JSONObject> jsonObject = std::make_unique<JSONObject>(json);
@@ -49,7 +63,7 @@ indiepub::Credentials indiepub::Credentials::from_json(const std::string &json)
 
 indiepub::Credentials indiepub::Credentials::from_row(const CassRow *row)
 {
-    try 
+    try
     {
         if (row == nullptr)
         {

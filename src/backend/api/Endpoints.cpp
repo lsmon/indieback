@@ -72,6 +72,7 @@ bool Endpoints::isValidPassword(const std::string &password)
 void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response, Path *path)
 {
     std::string msg = request.getBody();
+    LOG_DEBUG << "signInHandler called with body: " << msg;
     try
     {
         std::string email;
@@ -216,7 +217,10 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
             else 
             {
                 indiepub::Credentials creds = getCredentialsController().getCredentialsByUserId(user.user_id());
-                if(creds.pw_hash() != pwHash) 
+
+                std::string credsPwHash = creds.pw_hash();
+
+                if(credsPwHash != pwHash) 
                 {
                     response.setStatus(CODES::UNAUTHORIZE);
                     response.setStatusMsg(Status(CODES::UNAUTHORIZE).ss.str());
@@ -229,7 +233,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                     response.setStatusMsg(Status(CODES::CREATED).ss.str());
                     body->put("user", user.to_json());
 
-                    std::string token = tokenGenerator(pwHash);
+                    std::string token = tokenGenerator(credsPwHash);
                     creds.set_auth_token(token);
                     if (getCredentialsController().insertCredentials(creds))
                     {
@@ -263,13 +267,6 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
     return;
 }
 
-std::string Endpoints::tokenGenerator(std::string &pwHash)
-{
-    byte *tokenBytes = nullptr;
-    size_t tokenLength = RsaServer::getInstance()->sign(pwHash.c_str(), tokenBytes, "");
-    std::string authToken = StringEncoder::bytesToHex(tokenBytes, tokenLength);
-    return authToken;
-}
 void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response, Path *path)
 {
     std::string msg = request.getBody();
@@ -430,6 +427,7 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
                         body->put("token", creds.auth_token());
                         body->put("user", user.to_json());
                         response.setBody(body->c_str());
+                        response.addHeader("Content-Type", "application/json");
                         LOG_DEBUG << response.getBody();
                     }
                     else 
@@ -449,6 +447,14 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
         response.setStatus(CODES::INTERNAL_SERVER_ERROR);
         response.setStatusMsg(Status(CODES::INTERNAL_SERVER_ERROR).ss.str());
     }
+}
+
+std::string Endpoints::tokenGenerator(std::string &pwHash)
+{
+    byte *tokenBytes = nullptr;
+    size_t tokenLength = RsaServer::getInstance()->sign(pwHash.c_str(), tokenBytes, "");
+    std::string authToken = StringEncoder::bytesToHex(tokenBytes, tokenLength);
+    return authToken;
 }
 
 std::string Endpoints::hashing(std::string &password)

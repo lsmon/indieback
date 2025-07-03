@@ -20,7 +20,10 @@ private:
 
     void destroy();
 
-    
+    void unloadPublicKey();
+
+    void unloadPrivateKey();
+
 public:
     AuthCrypto();
     
