@@ -425,7 +425,6 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
                         response.setStatusMsg(Status(CODES::CREATED).ss.str());
                         std::unique_ptr<JSONObject> body = std::make_unique<JSONObject>();
                         body->put("token", creds.auth_token());
-                        body->put("user", user.to_json());
                         response.setBody(body->c_str());
                         response.addHeader("Content-Type", "application/json");
                         LOG_DEBUG << response.getBody();
