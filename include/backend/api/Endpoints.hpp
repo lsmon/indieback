@@ -8,6 +8,8 @@
 #include <crypto/AuthCrypto.hpp>
 #include <backend/controllers/CredentialsController.hpp>
 #include <backend/controllers/UsersController.hpp>
+#include <backend/controllers/EventController.hpp>
+#include <backend/controllers/VenuesController.hpp>
 #include <string>
 #include <iostream>
 #include <stdexcept>
@@ -22,7 +24,14 @@ private:
     static bool isValidPassword(const std::string &password);
 
     static indiepub::CredentialsController getCredentialsController();
+    
     static indiepub::UsersController getUsersController();
+
+    static indiepub::EventController getEventController();
+
+    static indiepub::VenuesController getVenuesController();
+
+    static bool validateTokenAndId(const HttpRequest &request, HttpResponse &response, Path *path, indiepub::Credentials &creds, indiepub::User &user);
 
 public:
     Endpoints(/* args */);
@@ -37,6 +46,8 @@ public:
 
     static std::string hashing(std::string &value);
 
+    static void validateHeaders(const HttpRequest &request, HttpResponse &response, Path *path);
+
     static void fetchEventsHandler(const HttpRequest &request, HttpResponse &response, Path* path);
 
     static void createEventHandler(const HttpRequest &request, HttpResponse &response, Path* path);
@@ -45,7 +56,17 @@ public:
 
     static void createPostHandler(const HttpRequest &request, HttpResponse &response, Path* path);
 
+    static void fetchUserInfoHandler(const HttpRequest &request, HttpResponse &response, Path* path);
+    
+    static void updateUserInfoHandler(const HttpRequest &request, HttpResponse &response, Path *path);
 
+    static void addVenueProfileHandler(const HttpRequest &request, HttpResponse &response, Path* path);
+
+    static void fetchVenueProfileHandler(const HttpRequest &request, HttpResponse &response, Path* path);
+
+    static void addBandProfileHandler(const HttpRequest &request, HttpResponse &response, Path* path);
+
+    static void fetchBandProfileHandler(const HttpRequest &request, HttpResponse &response, Path* path);
 };
 
 #endif // INDIEPUB_ENDPOINTS_HPP

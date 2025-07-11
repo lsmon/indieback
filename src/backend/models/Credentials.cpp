@@ -98,7 +98,7 @@ indiepub::Credentials indiepub::Credentials::from_row(const CassRow *row)
             throw std::runtime_error("Failed to get password hash");
         }
 
-        return indiepub::Credentials(std::string(user_id_str), std::string(token), std::string(hash));
+        return indiepub::Credentials(std::string(user_id_str), std::string(token), std::string(hash, hash_length));
     }
     catch (const std::exception &e)
     {

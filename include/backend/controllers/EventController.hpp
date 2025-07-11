@@ -13,6 +13,7 @@ namespace indiepub {
 
         bool insertEvent(const indiepub::EventByVenue& event);
         std::vector<indiepub::EventByVenue> getAllEvents();
+        std::vector<indiepub::EventByVenue> getOneWeekEvents(const time_t& start_date);
         indiepub::EventByVenue getEventById(const std::string& event_id);
         indiepub::EventByVenue getEventBy(const std::string& name, const std::string& location);
 

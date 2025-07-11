@@ -144,6 +144,40 @@ std::vector<indiepub::EventByVenue> indiepub::EventController::getAllEvents() {
     return events;
 }
 
+std::vector<indiepub::EventByVenue> indiepub::EventController::getOneWeekEvents(const time_t &start_date) {
+    std::vector<indiepub::EventByVenue> events;
+    time_t end_date = start_date + 7 * 24 * 60 * 60; // One week later
+    std::string query = "SELECT * FROM " + this->keyspace_ + "." + EventByVenue::COLUMN_FAMILY + 
+                        " WHERE date >= ? AND date <= ? ALLOW FILTERING";
+    CassStatement *statement = cass_statement_new(query.c_str(), 2);
+    cass_statement_bind_int64(statement, 0, start_date);
+    cass_statement_bind_int64(statement, 1, end_date);
+
+    CassFuture *query_future = cass_session_execute(session, statement);
+    cass_future_wait(query_future);
+    if (cass_future_error_code(query_future) == CASS_OK) {
+        const CassResult *result = cass_future_get_result(query_future);
+        CassIterator *iterator = cass_iterator_from_result(result);
+        while (cass_iterator_next(iterator)) {
+            const CassRow *row = cass_iterator_get_row(iterator);
+            events.emplace_back(indiepub::EventByVenue::from_row(row));
+        }
+        cass_iterator_free(iterator);
+        cass_result_free(result);
+    } else {
+        const char *message;
+        size_t message_length;
+        cass_future_error_message(query_future, &message, &message_length);
+        std::cerr << __FILE__ << ":" << __LINE__ << " : " << "Query execution failed: " << std::string(message, message_length) << std::endl;
+    }
+    cass_statement_free(statement);
+    cass_future_free(query_future);
+    // If we reach here, it means no events were found
+    return events;
+}
+
+
+
 indiepub::EventByVenue indiepub::EventController::getEventById(const std::string &event_id) {
     std::string query = "SELECT * FROM " + this->keyspace_ + "." + EventByVenue::COLUMN_FAMILY + " WHERE event_id = ? ALLOW FILTERING";
     CassStatement *statement = cass_statement_new(query.c_str(), 1);

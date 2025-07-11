@@ -24,6 +24,9 @@ namespace indiepub {
         std::string role() const;
         std::string name() const;
         std::time_t created_at() const;
+        std::string bio() const;
+        std::string profile_picture() const;
+        std::vector<std::string> social_links() const; // List of social media links
 
         // Setters
         void user_id(const std::string& user_id);
@@ -31,6 +34,9 @@ namespace indiepub {
         void role(const std::string& role);
         void name(const std::string& name);
         void created_at(const std::time_t& created_at);
+        void bio(const std::string& bio);
+        void profile_picture(const std::string& profile_picture);
+        void social_links(const std::vector<std::string>& social_links);
 
         // JSON serialization
         std::string to_json() const;
@@ -38,12 +44,17 @@ namespace indiepub {
         static User from_json(const std::string& json);
 
         static User from_row(const CassRow *row);
+
     private:
         std::string user_id_;  // UUID
         std::string email_;
         std::string role_;    // 'fan', 'band', 'venue'
         std::string name_;
         std::time_t created_at_;
+        std::string bio_;
+        std::string profile_picture_;
+        std::vector<std::string> social_links_; // List of social media links
+
     };
 }
 #endif // INDIEPUB_USER_HPP

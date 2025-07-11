@@ -310,7 +310,7 @@ size_t AuthCrypto::sign(const char *msg, unsigned char *&sig, const char *passwo
         if (!loadPrivateKey(password))
             return -1;
     }
-
+    this->ctx = nullptr;
     EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
     if (md_ctx == nullptr)
     {

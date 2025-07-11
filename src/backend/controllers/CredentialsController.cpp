@@ -89,7 +89,7 @@ indiepub::Credentials indiepub::CredentialsController::getCredentialsByUserId(co
 indiepub::Credentials indiepub::CredentialsController::getCredentialsByAuthToken(const std::string &auth_token)
 {
     std::string query = "SELECT * FROM " + keyspace_ + "." + indiepub::Credentials::COLUMN_FAMILY
-        + " WHERE " + indiepub::Credentials::IDX_CREDENTIAL_AUTH_TOKEN + "=?";
+        + " WHERE " + indiepub::Credentials::IDX_CREDENTIAL_AUTH_TOKEN + "=? ALLOW FILTERING";
     CassStatement *statement = cass_statement_new(query.c_str(), 1);
     cass_statement_bind_string(statement, 0, auth_token.c_str());
     CassFuture *query_future = cass_session_execute(session, statement);
