@@ -386,7 +386,7 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
                     size_t decryptedLen = RsaServer::getInstance()->decrypt(encryptedData.data(), encryptedData.size(), decryptedData);
                     if (decryptedData && decryptedLen > 0)
                     {
-                        email = StringEncoder::bytesToString(decryptedData, decryptedLen); // std::string(reinterpret_cast<char *>(decryptedData), decryptedLen);
+                        email = StringEncoder::bytesToString(decryptedData, decryptedLen);
                         delete[] decryptedData;
                     }
                     else
@@ -753,7 +753,7 @@ void Endpoints::updateUserInfoHandler(const HttpRequest &request, HttpResponse &
     {
         if (user.role() == "venue") 
         {
-            
+
         }
     }
 }
@@ -776,6 +776,12 @@ void Endpoints::fetchBandProfileHandler(const HttpRequest &request, HttpResponse
 void Endpoints::addVenueProfileHandler(const HttpRequest &request, HttpResponse &response, Path *path)
 {
     LOG_DEBUG << "addVenueProfileHandler called";
+    indiepub::Credentials creds;
+    indiepub::User user;
+    if (validateTokenAndId(request, response, path, creds, user))
+    {
+        
+    }
     response.setBody("Hello, World!");
     response.setStatus(200);
 }

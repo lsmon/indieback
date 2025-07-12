@@ -12,20 +12,16 @@ CREATE TABLE indie_pub.bands (
     description text,
     genre text,
     name text,
-    member_id uuid,
     PRIMARY KEY (band_id, created_at)
 ) WITH CLUSTERING ORDER BY (created_at DESC);
 
 CREATE INDEX idx_bands_genre ON indie_pub.bands (genre);
 CREATE INDEX idx_bands_name ON indie_pub.bands (name);
-CREATE INDEX idx_bands_member_id on indie_pub.bands (member_id);
-
 CREATE TABLE indie_pub.credentials (
     user_id uuid PRIMARY KEY,
     auth_token text,
     pw_hash text
 );
-
 CREATE TABLE indie_pub.daily_ticket_sales (
     event_id uuid,
     sale_date timestamp,
