@@ -13,6 +13,8 @@ namespace indiepub {
 
         bool insertUser(const indiepub::User& user);
 
+        bool updateUser(const indiepub::User& user);
+
         std::vector<indiepub::User> getAllUsers();
 
         indiepub::User getUserById(const std::string& user_id);

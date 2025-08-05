@@ -14,3 +14,4 @@ std::time_t indiepub::string_to_timestamp(const std::string& str) {
     strptime(str.c_str(), "%Y-%m-%dT%H:%M:%SZ", &tm);
     return std::mktime(&tm);
 }
+

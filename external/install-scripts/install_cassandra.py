@@ -59,24 +59,24 @@ def update_repository():
 def build():
     print("Building cassandra-cpp-driver...")
 
-    _path = os.path.join(root_path, "cassandra-cpp-driver")
-    _build = os.path.join(_path, "build")
-    os.chdir(_path)
-    os.makedirs(_build, exist_ok=True)
+    path = os.path.join(root_path, "cassandra-cpp-driver")
+    build = os.path.join(path, "build")
+    os.chdir(path)
+    os.makedirs(build, exist_ok=True)
 
-    os_name = platform.system()
-    print(os_name)
+    
     cmake_bin = ""
-    if os_name == "Darwin":
+    compiler_flag = ""
+    if os_type == "darwin": 
         cmake_bin = "/opt/homebrew/bin/cmake"
+        compiler_flag = "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++"
     else :
         cmake_bin = "cmake"
-    print(cmake_bin + " --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -S" + _path + " -B" + _build)
-    print(cmake_bin + " --build " + _build + " --config Debug --target all -j 12 --")
-    run_command(cmake_bin + " --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -S" + _path + " -B" + _build)
-    run_command(cmake_bin + " --build " + _build + " --config Debug --target all -j 12 --")
-
+    
+    run_command(cmake_bin + " --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_POLICY_VERSION_MINIMUM=3.5 " + compiler_flag + " -S" + path + " -B" + build)
+    run_command(cmake_bin + " --build " + build + " --config Debug --target all")
     print("Building completed.")
+
 
 
 def install():

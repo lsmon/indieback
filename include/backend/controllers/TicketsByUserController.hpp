@@ -12,7 +12,9 @@ namespace indiepub {
 
     class TicketsByUserController : public CassandraConnection {
     public:
+#if __linux__
         TicketsByUserController() = default;
+#endif // __linux__
         TicketsByUserController(const std::string& contact_points, const std::string& username, const std::string& password, const std::string& keyspace);
 
         bool insertTicket(const indiepub::TicketByUser& ticket);

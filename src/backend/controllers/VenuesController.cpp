@@ -1,5 +1,6 @@
 #include <backend/controllers/VenuesController.hpp>
 #include <backend/models/Venue.hpp>
+#include <util/logging/Log.hpp>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -15,32 +16,32 @@ bool indiepub::VenuesController::insertVenue(const indiepub::Venue &venue)
     // Check if the venue_id is a valid UUID
     if (venue.venue_id().empty())
     {
-        std::cerr << "Venue ID cannot be empty" << std::endl;
+        LOG_ERROR << "Venue ID cannot be empty";
         return isValid;
     }
     if (venue.owner_id().empty())
     {
-        std::cerr << "Owner ID cannot be empty" << std::endl;
+        LOG_ERROR << "Owner ID cannot be empty";
         return isValid;
     }
     if (venue.name().empty())
     {
-        std::cerr << "Name cannot be empty" << std::endl;
+        LOG_ERROR << "Name cannot be empty";
         return isValid;
     }
     if (venue.location().empty())
     {
-        std::cerr << "Location cannot be empty" << std::endl;
+        LOG_ERROR << "Location cannot be empty";
         return isValid;
     }
     if (venue.capacity() <= 0)
     {
-        std::cerr << "Capacity must be positive" << std::endl;
+        LOG_ERROR << "Capacity must be positive";
         return isValid;
     }
     if (venue.created_at() <= 0)
     {
-        std::cerr << "Created at timestamp must be positive" << std::endl;
+        LOG_ERROR << "Created at timestamp must be positive";
         return isValid;
     }
 
@@ -48,13 +49,13 @@ bool indiepub::VenuesController::insertVenue(const indiepub::Venue &venue)
     indiepub::Venue existingVenue = getVenueBy(venue.name(), venue.location());
     if (existingVenue.venue_id() == venue.venue_id())
     {
-        std::cerr << "Venue with this name and location already exists" << std::endl;
+        LOG_ERROR << "Venue with this name and location already exists";
         return isValid;
     }
     
     if (!isConnected())
     {
-        std::cerr << "Not connected to Cassandra" << std::endl;
+        LOG_ERROR << "Not connected to Cassandra";
         return isValid;
     }
 
@@ -63,12 +64,12 @@ bool indiepub::VenuesController::insertVenue(const indiepub::Venue &venue)
     CassUuid venueId;
     if (cass_uuid_from_string(venue.venue_id().c_str(), &venueId) != CASS_OK)
     {
-        std::cerr << "Invalid UUID string: " + venue.venue_id() << std::endl;
+        LOG_ERROR << "Invalid UUID string: " + venue.venue_id();
     }
     CassUuid ownerId;
     if (cass_uuid_from_string(venue.owner_id().c_str(), &ownerId) != CASS_OK)
     {
-        std::cerr << "Invalid UUID string: " + venue.owner_id() << std::endl;
+        LOG_ERROR << "Invalid UUID string: " + venue.owner_id();
     }
     cass_statement_bind_uuid(statement, 0, venueId);
     cass_statement_bind_uuid(statement, 1, ownerId);
@@ -84,14 +85,84 @@ bool indiepub::VenuesController::insertVenue(const indiepub::Venue &venue)
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        LOG_ERROR << "Query execution failed: " << std::string(message, message_length);
         std::string error_message = "Query execution failed: " + std::string(message, message_length);
-        std::cerr << error_message << std::endl;
+        LOG_ERROR << error_message;
     }
     else
     {
         isValid = true;
-        std::cout << "Query executed successfully." << std::endl;
+        std::cout << "Query executed successfully.";
+    }
+    cass_statement_free(statement);
+    cass_future_free(query_future);
+    return isValid;
+}
+
+bool indiepub::VenuesController::updateVenue(const indiepub::Venue &venue)
+{
+    bool isValid = false;
+    // Check if the venue_id is a valid UUID
+    if (venue.venue_id().empty())
+    {
+        LOG_ERROR << "Venue ID cannot be empty";
+        return isValid;
+    }
+    if (venue.created_at() <= 0)
+    {
+        LOG_ERROR << "Created at timestamp must be positive";
+        return isValid;
+    }
+
+    // Check if the venue already exists
+    indiepub::Venue existingVenue = getVenueBy(venue.name(), venue.location());
+    if (existingVenue.venue_id() == venue.venue_id())
+    {
+        LOG_ERROR << "Venue with this name and location already exists";
+        return isValid;
+    }
+    
+    if (!isConnected())
+    {
+        LOG_ERROR << "Not connected to Cassandra";
+        return isValid;
+    }
+
+    std::string query = "UPDATE " + keyspace_ + "." + indiepub::Venue::COLUMN_FAMILY + " SET owner_id=?, name=?, location=?, capacity=?  WHERE venue_id = ? AND created_at = ?";
+    CassStatement *statement = cass_statement_new(query.c_str(), 6);
+    CassUuid venueId;
+    if (cass_uuid_from_string(venue.venue_id().c_str(), &venueId) != CASS_OK)
+    {
+        LOG_ERROR << "Invalid UUID string: " + venue.venue_id();
+    }
+    CassUuid ownerId;
+    if (cass_uuid_from_string(venue.owner_id().c_str(), &ownerId) != CASS_OK)
+    {
+        LOG_ERROR << "Invalid UUID string: " + venue.owner_id();
+    }
+    
+    cass_statement_bind_uuid(statement, 0, ownerId);
+    cass_statement_bind_string(statement, 1, venue.name().c_str());
+    cass_statement_bind_string(statement, 2, venue.location().c_str());
+    cass_statement_bind_int32(statement, 3, venue.capacity());
+    cass_statement_bind_uuid(statement, 4, venueId);
+    cass_statement_bind_int64(statement, 5, venue.created_at());
+
+    CassFuture *query_future = cass_session_execute(session, statement);
+    cass_future_wait(query_future);
+    if (cass_future_error_code(query_future) != CASS_OK)
+    {
+        const char *message;
+        size_t message_length;
+        cass_future_error_message(query_future, &message, &message_length);
+        LOG_ERROR << "Query execution failed: " << std::string(message, message_length);
+        std::string error_message = "Query execution failed: " + std::string(message, message_length);
+        LOG_ERROR << error_message;
+    }
+    else
+    {
+        isValid = true;
+        std::cout << "Query executed successfully.";
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
@@ -126,7 +197,7 @@ std::vector<indiepub::Venue> indiepub::VenuesController::getAllVenues()
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        LOG_ERROR << "Query execution failed: " << std::string(message, message_length);
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
@@ -162,7 +233,7 @@ indiepub::Venue indiepub::VenuesController::getVenueById(const std::string &venu
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        LOG_ERROR << "Query execution failed: " << std::string(message, message_length);
     }
     cass_statement_free(statement);
     cass_future_free(query_future);
@@ -194,7 +265,7 @@ indiepub::Venue indiepub::VenuesController::getVenueBy(const std::string &name, 
         const char *message;
         size_t message_length;
         cass_future_error_message(query_future, &message, &message_length);
-        std::cerr << "Query execution failed: " << std::string(message, message_length) << std::endl;
+        LOG_ERROR << "Query execution failed: " << std::string(message, message_length);
     }
     cass_statement_free(statement);
     cass_future_free(query_future);

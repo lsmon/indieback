@@ -8,7 +8,9 @@ namespace indiepub {
 
     class BandsController : public CassandraConnection {
     public:
+#if __linux__
         BandsController() = default;
+#endif // __linux__
         BandsController(const std::string& contact_points, const std::string& username, const std::string& password, const std::string& keyspace);
 
         bool insertBand(const indiepub::Band& band);

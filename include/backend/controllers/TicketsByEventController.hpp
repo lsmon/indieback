@@ -11,7 +11,9 @@ namespace indiepub {
 
     class TicketsByEventController : public CassandraConnection {
     public:
+#if __linux__
         TicketsByEventController() = default;
+#endif // __linux__
         TicketsByEventController(const std::string& contact_points, const std::string& username, const std::string& password, const std::string& keyspace);
 
         bool insertTicket(const indiepub::TicketByEvent& ticket);

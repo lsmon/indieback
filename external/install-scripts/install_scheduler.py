@@ -59,26 +59,26 @@ def update_repository():
 def build_scheduler():
     print("Building scheduler...")
 
-    scheduler_path = os.path.join(root_path, "scheduler")
-    scheduler_build = os.path.join(scheduler_path, "build")
-    os.chdir(scheduler_path)
-    os.makedirs(scheduler_build, exist_ok=True)
+    path = os.path.join(root_path, "scheduler")
+    build = os.path.join(path, "build")
+    os.chdir(path)
+    os.makedirs(build, exist_ok=True)
 
     os_name = platform.system()
-    print(os_name)
-    # run_command("cmake -S " + scheduler_path + " -B " + scheduler_build)
-    # run_command("cmake --build " + scheduler_build + " -j 14")
+    print(os_name)    
+    
     cmake_bin = ""
-    if os_name == "Darwin":
+    compiler_flag = ""
+    if os_type == "darwin": 
         cmake_bin = "/opt/homebrew/bin/cmake"
+        compiler_flag = "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++"
     else :
         cmake_bin = "cmake"
-    print(cmake_bin + " --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -S" + scheduler_path + " -B" + scheduler_build)
-    print(cmake_bin + " --build " + scheduler_build + " --config Debug --target all -j 12 --")
-    run_command(cmake_bin + " --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -S" + scheduler_path + " -B" + scheduler_build)
-    run_command(cmake_bin + " --build " + scheduler_build + " --config Debug --target all -j 12 --")
-
+    
+    run_command(cmake_bin + " --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE " + compiler_flag + " -S" + path + " -B" + build)
+    run_command(cmake_bin + " --build " + build + " --config Debug --target all")
     print("Building completed.")
+
 
 
 def cpack_scheduler():

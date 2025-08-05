@@ -59,26 +59,26 @@ def update_repository():
 def build_cache():
     print("Building cache...")
 
-    cache_path = os.path.join(root_path, "cache")
-    cache_build = os.path.join(cache_path, "build")
-    os.chdir(cache_path)
-    os.makedirs(cache_build, exist_ok=True)
+    path = os.path.join(root_path, "cache")
+    build = os.path.join(path, "build")
+    os.chdir(path)
+    os.makedirs(build, exist_ok=True)
 
     os_name = platform.system()
     print(os_name)
-    # run_command("cmake -S " + cache_path + " -B " + cache_build)
-    # run_command("cmake --build " + cache_build + " -j 14")
-    cmake_bin = "";
-    if os_name == "Darwin":
+    
+    cmake_bin = ""
+    compiler_flag = ""
+    if os_type == "darwin": 
         cmake_bin = "/opt/homebrew/bin/cmake"
+        compiler_flag = "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++"
     else :
         cmake_bin = "cmake"
-    print(cmake_bin + " --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -S" + cache_path + " -B" + cache_build)
-    print(cmake_bin + " --build " + cache_build + " --config Debug --target all -j 12 --")
-    run_command(cmake_bin + " --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -S" + cache_path + " -B" + cache_build)
-    run_command(cmake_bin + " --build " + cache_build + " --config Debug --target all -j 12 --")
-
+    
+    run_command(cmake_bin + " --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE " + compiler_flag + " -S" + path + " -B" + build)
+    run_command(cmake_bin + " --build " + build + " --config Debug --target all")
     print("Building completed.")
+
 
 
 def cpack_cache():

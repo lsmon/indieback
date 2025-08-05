@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include <util/logging/Log.hpp>
+#include <util/String.hpp>
 
 const std::string indiepub::User::COLUMN_FAMILY = "users";
 const std::string indiepub::User::IDX_USERS_EMAIL = "email";
@@ -101,48 +102,63 @@ void indiepub::User::social_links(const std::vector<std::string> &social_links)
 
 std::string indiepub::User::to_json() const
 {
-    std::unique_ptr<JSONObject> json = std::make_unique<JSONObject>();
-    json->put("user_id", user_id_);
-    json->put("email", email_);
-    json->put("role", role_);
-    json->put("name", name_);
-    json->put("created_at", indiepub::timestamp_to_string(created_at_));
-    json->put("bio", bio_);
-    json->put("profile_picture", profile_picture_);
-    if (!social_links_.empty())
+    try 
     {
-        std::shared_ptr<JSONArray> socialLinksArray = std::make_shared<JSONArray>();
-        for (const auto &link : social_links_)
+        std::unique_ptr<JSONObject> json = std::make_unique<JSONObject>();
+        json->put("user_id", user_id_);
+        json->put("email", email_);
+        json->put("role", role_);
+        json->put("name", name_);
+        json->put("created_at", indiepub::timestamp_to_string(created_at_));
+        json->put("bio", bio_);
+        json->put("profile_picture", profile_picture_);
+        if (!social_links_.empty())
         {
-            socialLinksArray->add(JSON(link));
+            std::shared_ptr<JSONArray> socialLinksArray = std::make_shared<JSONArray>();
+            for (const auto &link : social_links_)
+            {
+                socialLinksArray->add(JSON(link));
+            }
+            json->put("social_links", socialLinksArray);
         }
-        json->put("social_links", socialLinksArray);
+        return json->str();
     }
-    return json->str();
+    catch(std::exception &e) {(
+        throw std::runtime_error(e.what()));
+    }
 }
 
 indiepub::User indiepub::User::from_json(const std::string &json)
 {
-    User user;
-    std::unique_ptr<JSONObject> jsonObject = std::make_unique<JSONObject>(json);
-    user.user_id_ = jsonObject->get("user_id").str();
-    user.email_ = jsonObject->get("email").str();
-    user.role_ = jsonObject->get("role").str();
-    user.name_ = jsonObject->get("name").str();
-    user.created_at_ = indiepub::string_to_timestamp(jsonObject->get("created_at").str());
-    user.bio_ = jsonObject->get("bio").str();
-    user.profile_picture_ = jsonObject->get("profile_picture").str();
-    if (jsonObject->contains("social_links"))
+    try
     {
-        std::shared_ptr<JSONArray> socialLinksArray = std::make_shared<JSONArray>(jsonObject->get("social_links").c_str());
-        
-        for (const auto &link : socialLinksArray->get())
+        User user;
+        std::unique_ptr<JSONObject> jsonObject = std::make_unique<JSONObject>(json);
+        user.user_id_ = jsonObject->get("id").str();
+        user.email_ = jsonObject->get("email").str();
+        user.role_ = jsonObject->get("role").str();
+        user.name_ = jsonObject->get("name").str();
+        user.created_at_ = indiepub::string_to_timestamp(jsonObject->get("created_at").str());
+        user.bio_ = jsonObject->get("bio").str();
+        user.profile_picture_ = jsonObject->get("profile_picture").str();
+        if (jsonObject->contains("social_links"))
         {
-            user.social_links_.push_back(link.str());
+            std::string socialLinks = jsonObject->get("social_links").c_str();
+            std::regex rx(",");
+            std::vector<std::string> socialLinksArray = String::tokenize(socialLinks, rx);
+            
+            for (const auto &link : socialLinksArray)
+            {
+                user.social_links_.push_back(link);
+            }
         }
+        
+        return user;
     }
-    
-    return user;
+    catch (std::runtime_error &ex)
+    {
+        throw std::runtime_error(ex.what());
+    }
 }
 
 indiepub::User indiepub::User::from_row(const CassRow *row)
@@ -178,7 +194,7 @@ indiepub::User indiepub::User::from_row(const CassRow *row)
         const CassValue *email_value = cass_row_get_column_by_name(row, "email");
         if (cass_value_get_string(email_value, &email, &email_length) != CASS_OK)
         {
-            LOG_ERROR << "Failed to get email";
+            LOG_WARN << "Failed to get email";
             email = "";
         }
 
@@ -188,7 +204,7 @@ indiepub::User indiepub::User::from_row(const CassRow *row)
         const CassValue *role_value = cass_row_get_column_by_name(row, "role");
         if (cass_value_get_string(role_value, &role, &role_length) != CASS_OK)
         {
-            LOG_ERROR << "Failed to get role";
+            LOG_WARN << "Failed to get role";
             role = "";
         }
 
@@ -198,7 +214,7 @@ indiepub::User indiepub::User::from_row(const CassRow *row)
         const CassValue *name_value = cass_row_get_column_by_name(row, "name");
         if (cass_value_get_string(name_value, &name, &name_length) != CASS_OK)
         {
-            LOG_ERROR << "Failed to get name";
+            LOG_WARN << "Failed to get name";
             name = "";
         }
 
@@ -209,7 +225,7 @@ indiepub::User indiepub::User::from_row(const CassRow *row)
         const CassValue *bio_value = cass_row_get_column_by_name(row, "bio");
         if (cass_value_get_string(bio_value, &bio, &bio_length) != CASS_OK)
         {
-            LOG_ERROR << "Failed to get bio";
+            LOG_WARN << "Failed to get bio";
             bio = "";
         }
 
@@ -219,7 +235,7 @@ indiepub::User indiepub::User::from_row(const CassRow *row)
         const CassValue *profile_picture_value = cass_row_get_column_by_name(row, "profile_picture");
         if (cass_value_get_string(profile_picture_value, &profile_picture, &profile_picture_length) != CASS_OK)
         {
-            LOG_ERROR << "Failed to get profile_picture";
+            LOG_WARN << "Failed to get profile_picture";
             profile_picture = "";
         }
 
@@ -261,7 +277,7 @@ indiepub::User indiepub::User::from_row(const CassRow *row)
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Error: " << e.what() << std::endl;
+        LOG_ERROR << "Error: " << e.what();
         return User();
     }
 }

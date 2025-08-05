@@ -682,6 +682,8 @@ int main(int argc, char *argv[])
     }
     else
     {
+        std::time_t date = indiepub::string_to_timestamp("2025-08-01T16:16:50.744942");
+        std::cout << "Converted date: " << std::ctime(&date) << std::endl;
         std::cerr << "Unknown test type: " << testType << std::endl;
         return 1;
     }

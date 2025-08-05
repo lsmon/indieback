@@ -108,3 +108,16 @@ CREATE INDEX idx_venues_location ON indie_pub.venues (location);
 CREATE INDEX idx_venues_name ON indie_pub.venues (name);
 CREATE INDEX idx_venues_owner_id ON indie_pub.venues (owner_id);
 
+DROP TABLE IF EXISTS indie_pub.venue_members;
+
+CREATE TABLE IF NOT EXISTS indie_pub.venue_members (
+    venue_id uuid,
+    user_id uuid,
+    role text,
+    joined_at timestamp,
+    active boolean,
+    PRIMARY KEY (venue_id, user_id, joined_at)
+) WITH CLUSTERING ORDER BY (user_id ASC, joined_at DESC);
+
+CREATE INDEX idx_venue_members_role ON indie_pub.venue_members (role);
+CREATE INDEX idx_venue_members_active ON indie_pub.venue_members (active);

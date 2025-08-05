@@ -10,6 +10,7 @@
 #include <backend/controllers/UsersController.hpp>
 #include <backend/controllers/EventController.hpp>
 #include <backend/controllers/VenuesController.hpp>
+#include <backend/controllers/VenueMembersController.hpp>
 #include <string>
 #include <iostream>
 #include <stdexcept>
@@ -31,7 +32,11 @@ private:
 
     static indiepub::VenuesController getVenuesController();
 
+    static indiepub::VenueMembersController getVenueMembersController();
+
     static bool validateTokenAndId(const HttpRequest &request, HttpResponse &response, Path *path, indiepub::Credentials &creds, indiepub::User &user);
+
+    static std::string decryptMessage(const std::string &value);
 
 public:
     Endpoints(/* args */);

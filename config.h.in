@@ -34,7 +34,7 @@ typedef unsigned char byte;
 #define CASS_PW "cassandra"
 #define CASS_KS "indie_pub"
 #else
-#define CASS_CP "172.18.0.2"
+#define CASS_CP "127.0.0.1"
 #define CASS_UN "cassandra"
 #define CASS_PW "cassandra"
 #define CASS_KS "indie_pub"

@@ -11,7 +11,9 @@ namespace indiepub
     private:
         
     public:
+#if __linux__
         CredentialsController() = default;
+#endif // __linux__
         CredentialsController(const std::string& contact_points, const std::string& username, const std::string& password, const std::string& keyspace);
         
         bool insertCredentials(const indiepub::Credentials &creds);

@@ -57,6 +57,7 @@ set(INDIE_INC
         ${CMAKE_SOURCE_DIR}/include/backend/IndieBackModels.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/models/User.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/models/Venue.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/models/VenueMembers.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/models/Band.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/models/BandMember.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/models/EventByVenue.hpp
@@ -67,6 +68,7 @@ set(INDIE_INC
         ${CMAKE_SOURCE_DIR}/include/backend/models/Credentials.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/UsersController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/VenuesController.hpp
+        ${CMAKE_SOURCE_DIR}/include/backend/controllers/VenueMembersController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/BandsController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/BandMembersController.hpp
         ${CMAKE_SOURCE_DIR}/include/backend/controllers/EventController.hpp
@@ -90,6 +92,7 @@ set(INDIE_SRC
         ${CMAKE_SOURCE_DIR}/src/backend/IndieBackModels.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/models/User.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/models/Venue.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/models/VenueMembers.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/models/Band.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/models/BandMember.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/models/EventByVenue.cpp
@@ -100,6 +103,7 @@ set(INDIE_SRC
         ${CMAKE_SOURCE_DIR}/src/backend/models/DailyTicketSales.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/UsersController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/VenuesController.cpp
+        ${CMAKE_SOURCE_DIR}/src/backend/controllers/VenueMembersController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/BandsController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/BandMembersController.cpp
         ${CMAKE_SOURCE_DIR}/src/backend/controllers/EventController.cpp

@@ -10,7 +10,9 @@ namespace indiepub {
 
     class DailyTicketSalesController : public CassandraConnection {
     public:
+#if __linux__
         DailyTicketSalesController() = default;
+#endif // __linux__
         DailyTicketSalesController(const std::string& contact_points, const std::string& username, const std::string& password, const std::string& keyspace);
 
         bool insertDailyTicketSales(const indiepub::DailyTicketSales& daily_ticket_sales);

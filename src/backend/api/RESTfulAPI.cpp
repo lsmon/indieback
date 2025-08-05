@@ -25,11 +25,12 @@ void RESTfulAPI::initEndpointHandlers() {
     apiServer->setHttpHandler(HttpMethod::GET, "/posts", Endpoints::fetchPostsHandler);
     LOG_INFO << "/posts POST";
     apiServer->setHttpHandler(HttpMethod::POST, "/posts", Endpoints::createPostHandler);
+
     LOG_INFO << "/user/profile GET";
     apiServer->setHttpHandler(HttpMethod::GET, "/user/profile", Endpoints::fetchUserInfoHandler);
 
-    LOG_INFO << "/user/profile UPDATE";
-    apiServer->setHttpHandler(HttpMethod::GET, "/user/profile", Endpoints::updateUserInfoHandler);
+    LOG_INFO << "/user/profile PATCH";
+    apiServer->setHttpHandler(HttpMethod::PATCH, "/user/profile", Endpoints::updateUserInfoHandler);
 
     LOG_INFO << "/venue/profile POST";
     apiServer->setHttpHandler(HttpMethod::POST, "/venue/profile", Endpoints::addVenueProfileHandler);

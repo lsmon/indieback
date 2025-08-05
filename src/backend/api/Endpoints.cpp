@@ -7,6 +7,7 @@
 #include <crypto/StringEncoder.hpp>
 #include <crypto/Hash.hpp>
 #include <util/UUID.hpp>
+#include <util/String.hpp>
 #include <config.h>
 #include <backend/IndieBackModels.hpp>
 #include <ctime>
@@ -39,6 +40,11 @@ indiepub::VenuesController Endpoints::getVenuesController()
     return indiepub::VenuesController(CASS_CP, CASS_UN, CASS_PW, CASS_KS);
 }
 
+indiepub::VenueMembersController Endpoints::getVenueMembersController()
+{
+    return indiepub::VenueMembersController(CASS_CP, CASS_UN, CASS_PW, CASS_KS);
+}
+
 bool Endpoints::validateTokenAndId(const HttpRequest &request, HttpResponse &response, Path *path, indiepub::Credentials &creds, indiepub::User &user)
 {
     auto headers = request.getHeaders();
@@ -63,6 +69,8 @@ bool Endpoints::validateTokenAndId(const HttpRequest &request, HttpResponse &res
             return false;
         }
         std::string token = auth.substr(7); // Remove "Bearer " prefix
+        if (token[token.size()-1] == '\r' || token[token.size()-1] == '\n')
+            token = token.substr(0, token.size()-1);
         creds = getCredentialsController().getCredentialsByAuthToken(token);
         if (creds.auth_token().empty())
         {
@@ -73,6 +81,10 @@ bool Endpoints::validateTokenAndId(const HttpRequest &request, HttpResponse &res
             return false;
         }
         std::string xuserId = headers["x-user-id"];
+        if(xuserId[xuserId.size()-1] == '\r' || xuserId[xuserId.size()-1] == '\n') 
+        {
+            xuserId = xuserId.substr(0, xuserId.size() - 1);
+        }
         if (xuserId.empty()) {
             response.setStatus(CODES::UNAUTHORIZED);
             response.setStatusMsg(Status(CODES::UNAUTHORIZED).ss.str());
@@ -161,6 +173,31 @@ bool Endpoints::isValidPassword(const std::string &password)
     return password.length() >= 10;
 }
 
+std::string Endpoints::decryptMessage(const std::string &value)
+{
+    try
+    {
+        std::string result = "";
+        std::vector<byte> encryptedData = StringEncoder::base64Decode(value.c_str());
+        byte *decryptedData = nullptr;
+        size_t decryptedLen = RsaServer::getInstance()->decrypt(encryptedData.data(), encryptedData.size(), decryptedData);
+        if (decryptedData && decryptedLen > 0 && decryptedLen < SIZE_MAX)
+        {
+            result = StringEncoder::bytesToString(decryptedData, decryptedLen);
+            delete[] decryptedData;
+        }
+        else
+        {
+            throw std::runtime_error("Decryption error");
+        }
+        return result;
+    }
+    catch (std::runtime_error &ex) 
+    {
+        throw std::runtime_error(ex.what());
+    }
+}
+
 void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response, Path *path)
 {
     std::string msg = request.getBody();
@@ -177,15 +214,8 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                 auto value = jsonObj[key];
                 if (key == "email")
                 {
-                    std::vector<byte> encryptedData = StringEncoder::base64Decode(value.c_str());
-                    byte *decryptedData = nullptr;
-                    size_t decryptedLen = RsaServer::getInstance()->decrypt(encryptedData.data(), encryptedData.size(), decryptedData);
-                    if (decryptedData && decryptedLen > 0 && decryptedLen < SIZE_MAX)
-                    {
-                        email = StringEncoder::bytesToString(decryptedData, decryptedLen); // std::string(reinterpret_cast<char *>(decryptedData), decryptedLen);
-                        delete[] decryptedData;
-                    }
-                    else
+                    email = decryptMessage(value.c_str());
+                    if (email.empty())
                     {
                         int status = CODES::BAD_REQUEAST;
                         std::string errorMsg = Status(status).ss.str() + " Failed to decrypt email";
@@ -218,21 +248,11 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                         // Split into two parts based on ':'
                         std::string part1 = valueStr.substr(0, colonPos);
                         std::string part2 = valueStr.substr(colonPos + 1);
-                        std::vector<byte> pwdEnc = StringEncoder::base64Decode(part1.c_str());
-                        if (pwdEnc.empty())
-                        {
-                            int status = CODES::BAD_REQUEAST;
-                            std::string errorMsg = Status(status).ss.str() + " Failed to decode password";
-                            LOG_ERROR << "Failed to decode password";
-                            response.setStatus(status);
-                            response.setStatusMsg(errorMsg);
-                            body->put("error", "Failed to decode password");
-                            response.setBody(body->c_str());
-                            return;
-                        }
-                        byte *decPwData = nullptr;
-                        size_t pwLength = RsaServer::getInstance()->decrypt(pwdEnc.data(), pwdEnc.size(), decPwData);
-                        if (pwLength == -1 || pwLength == SIZE_MAX)
+                        LOG_DEBUG << part1 << " : " << part1.size();
+
+                        std::string password = decryptMessage(part1);
+                        
+                        if (password.empty())
                         {
                             int status = CODES::BAD_REQUEAST;
                             std::string errorMsg = Status(status).ss.str() + " Failed to decrypt password";
@@ -241,14 +261,9 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                             response.setStatusMsg(errorMsg);
                             body->put("error", "Failed to decrypt password");
                             response.setBody(body->c_str());
-                            if (decPwData)
-                            {
-                                OPENSSL_free(decPwData);
-                            }
                             return;
                         }
-                        std::string password = StringEncoder::bytesToString(decPwData, pwLength);
-                        OPENSSL_free(decPwData);
+                        
 
                         std::vector<byte> signatureBytes = StringEncoder::base64Decode(part2);
                         bool isVerified = RsaClient::getInstance()->verify(password.c_str(), signatureBytes.data(), signatureBytes.size());
@@ -336,11 +351,14 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
                         body->put("created_at", indiepub::timestamp_to_string(user.created_at()));
                         body->put("bio", user.bio());
                         body->put("profile_picture", user.profile_picture());
-                        JSONArray socialLinksArray;
+                        std::string socialLinks;
                         for (const auto& link : user.social_links()) {
-                            socialLinksArray.add(link);
+                            socialLinks += link + ",";
                         }
-                        body->put("social_links", socialLinksArray);;
+                        if (!socialLinks.empty()) {
+                            socialLinks.pop_back(); // Remove the trailing comma
+                        }
+                        body->put("social_links", socialLinks);;
                         response.setBody(body->c_str());
                         LOG_DEBUG << response.getBody();
                     }
@@ -368,6 +386,7 @@ void Endpoints::signInHandler(const HttpRequest &request, HttpResponse &response
 void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response, Path *path)
 {
     std::string msg = request.getBody();
+    LOG_DEBUG << "signUpHandler: " << msg;
     try
     {
         std::string email;
@@ -375,21 +394,14 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
         std::string role;
         if (!msg.empty())
         {
-            auto jsonObj = JSONObject(msg);
-            for (const auto key : jsonObj.keys())
+            std::unique_ptr<JSONObject> jsonObj = std::make_unique<JSONObject>(msg);
+            for (const auto key : jsonObj->keys())
             {
-                auto value = jsonObj[key];
+                auto value = jsonObj->get(key);
                 if (key == "email")
                 {
-                    std::vector<byte> encryptedData = StringEncoder::base64Decode(value.c_str());
-                    byte *decryptedData = nullptr;
-                    size_t decryptedLen = RsaServer::getInstance()->decrypt(encryptedData.data(), encryptedData.size(), decryptedData);
-                    if (decryptedData && decryptedLen > 0)
-                    {
-                        email = StringEncoder::bytesToString(decryptedData, decryptedLen);
-                        delete[] decryptedData;
-                    }
-                    else
+                    email = decryptMessage(value.c_str());
+                    if (email.empty())
                     {
                         int status = CODES::BAD_REQUEAST;
                         std::string errorMsg = Status(status).ss.str() + " Failed to decrypt email";
@@ -417,19 +429,8 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
                     {
                         std::string part1 = valueStr.substr(0, colonPos);
                         std::string part2 = valueStr.substr(colonPos + 1);
-                        std::vector<byte> pwdEnc = StringEncoder::base64Decode(part1.c_str());
-                        if (pwdEnc.empty())
-                        {
-                            int status = CODES::BAD_REQUEAST;
-                            std::string errorMsg = Status(status).ss.str() + " Failed to decode password";
-                            LOG_ERROR << "Failed to decode password";
-                            response.setStatus(status);
-                            response.setStatusMsg(errorMsg);
-                            return;
-                        }
-                        byte *decPwData = nullptr;
-                        size_t pwLength = RsaServer::getInstance()->decrypt(pwdEnc.data(), pwdEnc.size(), decPwData);
-                        if (pwLength == -1 || pwLength == SIZE_MAX)
+                        std::string password = decryptMessage(part1);
+                        if (password.empty())
                         {
                             int status = CODES::BAD_REQUEAST;
                             std::string errorMsg = Status(status).ss.str() + " Failed to decrypt password";
@@ -438,8 +439,6 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
                             response.setStatusMsg(errorMsg);
                             return;
                         }
-                        std::string password = StringEncoder::bytesToString(decPwData, pwLength);
-                        OPENSSL_free(decPwData);
 
                         std::vector<byte> signatureBytes = StringEncoder::base64Decode(part2);
                         bool isVerified = RsaClient::getInstance()->verify(password.c_str(), signatureBytes.data(), signatureBytes.size());
@@ -469,15 +468,8 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
                 }
                 else if (key == "role")
                 {
-                    std::vector<byte> encryptedData = StringEncoder::base64Decode(value.c_str());
-                    byte *decryptedData = nullptr;
-                    size_t decryptedLen = RsaServer::getInstance()->decrypt(encryptedData.data(), encryptedData.size(), decryptedData);
-                    if (decryptedData && decryptedLen > 0)
-                    {
-                        role = StringEncoder::bytesToString(decryptedData, decryptedLen);
-                        delete[] decryptedData;
-                    }
-                    else
+                    role = decryptMessage(value.c_str());
+                    if (role.empty())
                     {
                         int status = CODES::BAD_REQUEAST;
                         std::string errorMsg = Status(status).ss.str() + " Failed to decrypt email";
@@ -488,7 +480,7 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
                     }
                 }
             }
-            LOG_DEBUG << jsonObj.dump(4);
+            LOG_DEBUG << jsonObj->dump(4);
         }
         if (email.empty() && pwHash.empty() && role.empty())
         {
@@ -558,6 +550,7 @@ void Endpoints::signUpHandler(const HttpRequest &request, HttpResponse &response
     }
 }
 
+\
 void Endpoints::fetchUserInfoHandler(const HttpRequest &request, HttpResponse &response, Path *path)
 {
     indiepub::Credentials creds;
@@ -733,14 +726,7 @@ void Endpoints::fetchPostsHandler(const HttpRequest &request, HttpResponse &resp
 
 void Endpoints::createPostHandler(const HttpRequest &request, HttpResponse &response, Path *path)
 {
-    LOG_DEBUG << "createPostHandler called";
-    response.setBody("Hello, World!");
-    response.setStatus(200);
-}
-
-void Endpoints::fetchUserInfoHandler(const HttpRequest &request, HttpResponse &response, Path* path)
-{
-    LOG_DEBUG << "fetchUserInfoHandler called";
+    LOG_DEBUG << "createPostHanPdler called";
     response.setBody("Hello, World!");
     response.setStatus(200);
 }
@@ -749,12 +735,52 @@ void Endpoints::updateUserInfoHandler(const HttpRequest &request, HttpResponse &
 {
     indiepub::Credentials creds;
     indiepub::User user;
-    if (validateTokenAndId(request, response, path, creds, user))
+    
+    try
     {
-        if (user.role() == "venue") 
+        bool result = false;
+        if (validateTokenAndId(request, response, path, creds, user))
         {
-
+            std::string requestStr = request.getBody();
+            LOG_DEBUG << requestStr;
+            std::unique_ptr<JSONObject> jsonObject = std::make_unique<JSONObject>(requestStr);
+            
+            std::string name = decryptMessage(jsonObject->get("name").c_str());
+            std::string bio = jsonObject->get("bio").c_str();
+            std::string links = jsonObject->get("social_links").c_str();
+            std::string profilePicture = jsonObject->get("profile_picture").c_str();
+            std::regex rx(",");
+            std::vector<std::string> socialLinksVector = String::tokenize(links, rx);
+            std::vector<std::string> socialLinks;
+            for(auto& link: socialLinksVector)
+            {
+                std::string socialLink = decryptMessage(link);
+                socialLinks.push_back(String::trim(socialLink));
+            }
+            user.social_links(socialLinks);
+            user.name(name);
+            user.bio(bio);
+            user.profile_picture(profilePicture);
+            result = getUsersController().updateUser(user);
         }
+        if (result) 
+        {
+            response.setStatus(CODES::ACCPETED);
+            response.setStatusMsg(Status(CODES::ACCPETED).ss.str());
+        } 
+        else 
+        {
+            response.setStatus(CODES::NOT_ACCEPTABLE);
+            response.setStatusMsg(Status(CODES::NOT_ACCEPTABLE).ss.str());
+            response.setBody("{\"error\": \"failed to save venue information\"}");
+        }
+    } 
+    catch (std::runtime_error &ex)
+    {
+        LOG_ERROR << ex.what();
+        response.setStatus(CODES::INTERNAL_SERVER_ERROR);
+        response.setStatusMsg(Status(CODES::INTERNAL_SERVER_ERROR).ss.str());
+        response.setBody("{\"error\": \"someting went wrong in the server side\"}");
     }
 }
 
@@ -778,17 +804,150 @@ void Endpoints::addVenueProfileHandler(const HttpRequest &request, HttpResponse 
     LOG_DEBUG << "addVenueProfileHandler called";
     indiepub::Credentials creds;
     indiepub::User user;
-    if (validateTokenAndId(request, response, path, creds, user))
+
+    try
     {
-        
+        bool result = false;
+    
+        if (validateTokenAndId(request, response, path, creds, user))
+        {
+            std::string requestStr = request.getBody();
+            LOG_DEBUG << requestStr;
+            std::unique_ptr<JSONObject> jsonObject = std::make_unique<JSONObject>(requestStr);
+            
+            
+            std::string venueId = jsonObject->get("venue_id").c_str().empty()? UUID::random() : decryptMessage(jsonObject->get("venue_id").c_str());
+            std::time_t createdAt = indiepub::string_to_timestamp(jsonObject->get("created_at").str());
+            long capacity = std::stol(jsonObject->get("capacity").str());
+            std::string name = decryptMessage(jsonObject->get("name").c_str());
+            std::string location = decryptMessage(jsonObject->get("location").c_str());
+            std::string userId = decryptMessage(jsonObject->get("user_id").c_str());
+            std::string memberType = decryptMessage(jsonObject->get("member_type").c_str());
+            
+            indiepub::Venue venue = getVenuesController().getVenueById(venueId);
+            indiepub::VenueMembers venueMember = getVenueMembersController().getVenueMemberByUserId(userId);
+
+            if (!venueMember.venue_id().empty() && venueMember.user_id() == userId && venueMember.is_active())
+            {
+                LOG_DEBUG << "Venue already exists for user: " << userId;
+                response.setStatus(CODES::ACCPETED);
+                response.setStatusMsg(Status(CODES::ACCPETED).ss.str());
+                std::unique_ptr<JSONObject> body = std::make_unique<JSONObject>(venue.to_json());
+                body->put("user_id", user.user_id());
+                body->put("created_at", indiepub::timestamp_to_string(venue.created_at()));
+                response.setBody(body->c_str());
+                return;
+            }
+
+            if (!venue.venue_id().empty())
+            {   
+                indiepub::VenueMembers venueMember(
+                    venue.venue_id(),
+                    userId,
+                    memberType,
+                    true,
+                    std::time(nullptr));
+            
+                venue = indiepub::Venue(
+                    venueId.empty() ? UUID::random() : venueId,
+                    user.user_id(),
+                    name,
+                    location,
+                    capacity,
+                    createdAt);
+                result = getVenuesController().updateVenue(venue);
+                result &= getVenueMembersController().updateVenueMember(venueMember);
+            }
+            else 
+            {
+                indiepub::VenueMembers venueMember(
+                    venueId,
+                    userId,
+                    memberType,
+                    true,
+                    std::time(nullptr));
+            
+                venue = indiepub::Venue(
+                    UUID::random(),
+                    user.user_id(),
+                    name,
+                    location,
+                    capacity,
+                    createdAt);
+                result = getVenuesController().insertVenue(venue);
+                result &= getVenueMembersController().insertVenueMember(venueMember);
+            }
+            if (result)
+            {
+                response.setStatus(CODES::ACCPETED);
+                response.setStatusMsg(Status(CODES::ACCPETED).ss.str());
+                response.setBody(venue.to_json().c_str());
+            }
+            else
+            {
+                response.setStatus(CODES::NOT_ACCEPTABLE);
+                response.setStatusMsg(Status(CODES::NOT_ACCEPTABLE).ss.str());
+                response.setBody("{\"error\": \"failed to save venue information\"}");
+            }
+        }
     }
-    response.setBody("Hello, World!");
-    response.setStatus(200);
+    catch (std::runtime_error &ex)
+    {
+        LOG_ERROR << ex.what();
+        response.setStatus(CODES::INTERNAL_SERVER_ERROR);
+        response.setStatusMsg(Status(CODES::INTERNAL_SERVER_ERROR).ss.str());
+        response.setBody("{\"error\": \"someting went wrong in the server side\"}");
+        return;
+    }
 }
 
 void Endpoints::fetchVenueProfileHandler(const HttpRequest &request, HttpResponse &response, Path *path)
 {
     LOG_DEBUG << "fetchVenueProfileHandler called";
-    response.setBody("Hello, World!");
-    response.setStatus(200);
+    indiepub::Credentials creds;
+    indiepub::User user;
+
+    try
+    {
+        bool result = false;
+    
+        if (validateTokenAndId(request, response, path, creds, user))
+        {
+            indiepub::VenueMembers vm = getVenueMembersController().getVenueMemberByUserId(user.user_id());
+            if (vm.venue_id().empty())
+            {
+                response.setStatus(CODES::NOT_FOUND);
+                response.setStatusMsg(Status(CODES::NOT_FOUND).ss.str());
+                response.setBody("{\"error\": \"Venue not found for user\"}");
+                return;
+            }
+            indiepub::Venue venue = getVenuesController().getVenueById(vm.venue_id());
+            if (!venue.venue_id().empty())
+            {
+                result = true;
+            }
+            
+            if (result)
+            {
+                response.setStatus(CODES::ACCPETED);
+                response.setStatusMsg(Status(CODES::ACCPETED).ss.str());
+                std::unique_ptr<JSONObject> body = std::make_unique<JSONObject>(venue.to_json());
+                response.setBody(body->c_str());
+            }
+            else
+            {
+                response.setStatus(CODES::NOT_ACCEPTABLE);
+                response.setStatusMsg(Status(CODES::NOT_ACCEPTABLE).ss.str());
+                response.setBody("{\"error\": \"failed to save venue information\"}");
+            }
+        }
+    }
+    catch (std::runtime_error &ex)
+    {
+        LOG_ERROR << ex.what();
+        response.setStatus(CODES::INTERNAL_SERVER_ERROR);
+        response.setStatusMsg(Status(CODES::INTERNAL_SERVER_ERROR).ss.str());
+        response.setBody("{\"error\": \"someting went wrong in the server side\"}");
+        return;
+    }
 }

@@ -11,7 +11,7 @@ const std::string indiepub::Venue::IDX_OWNERS_ID = "owner_id";
 const std::string indiepub::Venue::IDX_VENUES_LOCATION = "location";
 
 indiepub::Venue::Venue(const std::string &venue_id, const std::string &owner_id, const std::string &name,
-                       const std::string &location, int capacity, std::time_t created_at)
+                       const std::string &location, long capacity, std::time_t created_at)
     : venue_id_(venue_id), owner_id_(owner_id), name_(name), location_(location),
       capacity_(capacity), created_at_(created_at) {}
 
@@ -35,7 +35,7 @@ std::string indiepub::Venue::location() const
     return location_;
 }
 
-int indiepub::Venue::capacity() const
+long indiepub::Venue::capacity() const
 {
     return capacity_;
 }

@@ -8,7 +8,10 @@ namespace indiepub {
 
     class EventController : public CassandraConnection {
     public:
+#if __linux__
         EventController() = default;
+#endif // __linux__
+
         EventController(const std::string& contact_points, const std::string& username, const std::string& password, const std::string& keyspace);
 
         bool insertEvent(const indiepub::EventByVenue& event);

@@ -8,9 +8,17 @@ std::unique_ptr<AuthCrypto> RsaServer::getInstance()
     {
         instance->loadPublicKey();
     }
+    else
+    {
+        throw std::exception();
+    }
     if (instance->doesPrivateKeyExists())
     {
         instance->loadPrivateKey("");
+    }
+    else
+    {
+        throw std::exception();
     }
 
     return instance;

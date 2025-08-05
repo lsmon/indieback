@@ -8,7 +8,9 @@ if(OPENSSL_FOUND)
         
         add_executable(indieback_rsa_test ${CMAKE_SOURCE_DIR}/tests/TestRSA.cpp ${INDIE_CRYPTO_INC} ${INDIE_CRYPTO_SRC})
         target_include_directories(indieback_rsa_test PUBLIC ${CMAKE_SOURCE_DIR}/include ${OPENSSL_INCLUDE_DIR})
-        target_link_libraries(indieback_rsa_test PRIVATE ${OPENSSL_LIBRARIES}  OpenSSL::SSL OpenSSL::Crypto)
+        target_link_libraries(indieback_rsa_test PRIVATE ${THIRD_PARTY_LIB} ${OPENSSL_LIBRARIES}  OpenSSL::SSL OpenSSL::Crypto)
+        target_compile_definitions(indieback_rsa_test PUBLIC OPENSSL_SYS_MACOSX)
+
         add_test(NAME TEST_RSA COMMAND indieback_rsa_test)
         
     elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")

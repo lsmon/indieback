@@ -14,7 +14,6 @@ private:
     std::string private_key_file;
     EVP_PKEY *public_key;
     EVP_PKEY *private_key;
-    EVP_PKEY_CTX *ctx;
 
     void init();
 

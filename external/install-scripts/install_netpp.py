@@ -58,26 +58,25 @@ def build():
     print("Building netpp...")
 
     path = os.path.join(root_path, "netpp")
-    build_path = os.path.join(path, "build")
+    build = os.path.join(path, "build")
     os.chdir(path)
-    os.makedirs(build_path, exist_ok=True)
+    os.makedirs(build, exist_ok=True)
 
     os_name = platform.system()
     print(os_name)
-    # run_command("cmake -S " + path + " -B " + build_path)
-    # run_command("cmake --build " + build_path + " -j 14")
-    cmake_bin = "";
-    if os_name == "Darwin": 
+    
+    cmake_bin = ""
+    compiler_flag = ""
+    if os_type == "darwin": 
         cmake_bin = "/opt/homebrew/bin/cmake"
+        compiler_flag = "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++"
     else :
-        cmake_bin = "cmake"
-    print(cmake_bin + " --no-warn-unused-cli -DBUILD_TESTING=OFF -DBUILD_LIB=OFF -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -S" + path + " -B" + build_path)
-    print(cmake_bin + " --build " + build_path + " --config Debug --target all -j 12 --")
-    run_command(cmake_bin + " --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -S" + path + " -B" + build_path)
-    run_command(cmake_bin + " --build " + build_path + " --config Debug --target all")
-
+        cmake_bin = "/usr/local/bin/cmake"
+    
+    run_command(cmake_bin + " --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE " + compiler_flag + " -S" + path + " -B" + build)
+    run_command(cmake_bin + " --build " + build + " --config Debug --target all")
     print("Building completed.")
-
+    
 
 def cpack():
     print("Packing netpp")

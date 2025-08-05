@@ -10,7 +10,10 @@ namespace indiepub {
 
     class PostsByDateController : public CassandraConnection {
     public:
-        PostsByDateController() = default;
+#ifdef __linux__
+    PostsByDateController() = default;
+#endif
+
         PostsByDateController(const std::string& contact_points, const std::string& username, const std::string& password, const std::string& keyspace);
 
         bool insertPost(const indiepub::PostsByDate& post);

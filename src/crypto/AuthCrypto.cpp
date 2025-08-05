@@ -41,11 +41,6 @@ void AuthCrypto::destroy()
     {
         unloadPublicKey();
         unloadPrivateKey();
-        if (ctx != nullptr)
-        {
-            EVP_PKEY_CTX_free(ctx);
-            ctx = nullptr;
-        }
     }
     catch (const std::exception &e)
     {
@@ -70,31 +65,32 @@ void AuthCrypto::unloadPrivateKey()
         this->private_key = nullptr;
     }
 }
+
 bool AuthCrypto::generatePublicKey(EVP_PKEY *pkey)
 {
     if (pkey == nullptr)
     {
 
-        std::cerr << "rsa key creation has failed" << std::endl;
+        LOG_ERROR << "rsa key creation has failed";
         return false;
     }
     BIO *bio = BIO_new(BIO_s_file());
     if (bio == nullptr)
     {
         destroy();
-        std::cerr << "public key bio generation failed" << std::endl;
+        LOG_ERROR << "public key bio generation failed";
         return false;
     }
     if (BIO_write_filename(bio, (void *)public_key_file.c_str()) != 1)
     {
         destroy();
-        std::cerr << "public key file creation failed" << std::endl;
+        LOG_ERROR << "public key file creation failed";
         return false;
     }
     if (PEM_write_bio_PUBKEY(bio, pkey) != 1)
     {
         destroy();
-        std::cerr << "public key writing failed" << std::endl;
+        LOG_ERROR << "public key writing failed";
         return false;
     }
     BIO_free_all(bio);
@@ -107,14 +103,14 @@ bool AuthCrypto::generatePrivateKey(EVP_PKEY *pkey, const char *password)
     if (bio == nullptr)
     {
         destroy();
-        std::cerr << "private key bio generation failed" << std::endl;
+        LOG_ERROR << "private key bio generation failed";
         return false;
     }
     size_t password_len = (password == nullptr) ? 0 : strlen(password);
     if (PEM_write_bio_PKCS8PrivateKey(bio, pkey, nullptr, password, password_len, nullptr, nullptr) != 1)
     {
         destroy();
-        std::cerr << "private key writing failed" << std::endl;
+        LOG_ERROR << "private key writing failed";
         return false;
     }
     BIO_free_all(bio);
@@ -131,7 +127,7 @@ bool AuthCrypto::generateKeyPair(const char *password)
     }
     else
     {
-        throw std::runtime_error("nullptr exception");
+        LOG_ERROR << "nullptr exception";
     }
     return result;
 }
@@ -161,7 +157,7 @@ bool AuthCrypto::loadPrivateKey(const char *password)
     fp = fopen(private_key_file.c_str(), "r");
     if (fp == nullptr)
     {
-        std::cerr << "private key read has failed" << std::endl;
+        LOG_ERROR << "private key read has failed";
         return false;
     }
     this->private_key = PEM_read_PrivateKey(fp, nullptr, nullptr, (void *)password);
@@ -179,7 +175,7 @@ bool AuthCrypto::loadPublicKey()
     fp = fopen(public_key_file.c_str(), "r");
     if (fp == nullptr)
     {
-        std::cerr << "public key read has failed" << std::endl;
+        LOG_ERROR << "public key read has failed";
         return false;
     }
     this->public_key = PEM_read_PUBKEY(fp, nullptr, nullptr, nullptr);
@@ -196,36 +192,40 @@ size_t AuthCrypto::encrypt(unsigned char *src, unsigned char *&out)
     if (public_key == nullptr)
         if (!loadPublicKey())
             return -1;
-    if (ctx == nullptr)
-        ctx = EVP_PKEY_CTX_new(public_key, nullptr);
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(public_key, nullptr);
 
     if (EVP_PKEY_encrypt_init(ctx) <= 0)
     {
-        std::cerr << "encryption init failed" << std::endl;
+        LOG_ERROR << "encryption init failed";
+        EVP_PKEY_CTX_free(ctx);
         destroy();
         return -1;
     }
     if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) <= 0)
     {
+        EVP_PKEY_CTX_free(ctx);
         destroy();
-        std::cerr << "padding failed" << std::endl;
+        LOG_ERROR << "padding failed";
         return -1;
     }
     size_t out_len;
     size_t src_len = std::strlen((char *)src);
     if (EVP_PKEY_encrypt(ctx, nullptr, &out_len, src, src_len) <= 0)
     {
-        std::cerr << "encryption length computation error" << std::endl;
+        LOG_ERROR << "encryption length computation error";
+        EVP_PKEY_CTX_free(ctx);
         destroy();
         return -1;
     }
     out = (unsigned char *)OPENSSL_zalloc(out_len);
     if (EVP_PKEY_encrypt(ctx, out, &out_len, src, src_len) <= 0)
     {
-        std::cerr << "encryption error" << std::endl;
+        LOG_ERROR << "encryption error";
+        EVP_PKEY_CTX_free(ctx);
         destroy();
         return -1;
     }
+    EVP_PKEY_CTX_free(ctx);
     destroy();
     return out_len;
 }
@@ -235,33 +235,37 @@ size_t AuthCrypto::decrypt(unsigned char *src, size_t src_len, unsigned char *&o
     if (private_key == nullptr)
         if (!loadPrivateKey(password))
             return -1;
-    if (ctx == nullptr)
-        ctx = EVP_PKEY_CTX_new(private_key, nullptr);
+    
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(private_key, nullptr);
 
     if (EVP_PKEY_decrypt_init(ctx) <= 0)
     {
-        std::cerr << "decryption init error" << std::endl;
+        EVP_PKEY_CTX_free(ctx);
         destroy();
+        LOG_ERROR << "decryption init error";
         return -1;
     }
     if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) <= 0)
     {
+        EVP_PKEY_CTX_free(ctx);
         destroy();
-        std::cerr << "padding failed" << std::endl;
+        LOG_ERROR << "padding failed";
         return -1;
     }
     size_t out_len;
     if (EVP_PKEY_decrypt(ctx, nullptr, &out_len, src, src_len) <= 0)
     {
-        std::cerr << "decryption length computation error" << std::endl;
+        EVP_PKEY_CTX_free(ctx);
         destroy();
+        LOG_ERROR << "decryption length computation error";
         return -1;
     }
     out = (unsigned char *)OPENSSL_zalloc(out_len);
     if (EVP_PKEY_decrypt(ctx, out, &out_len, src, src_len) <= 0)
     {
-        std::cerr << "decryption init error" << std::endl;
+        EVP_PKEY_CTX_free(ctx);
         destroy();
+        LOG_ERROR << "decryption init error";
         return -1;
     }
     destroy();
@@ -284,15 +288,15 @@ size_t AuthCrypto::hashing(unsigned char *msg, unsigned char *&md_value)
     const EVP_MD *md = EVP_MD_fetch(nullptr, RSA_HASH_ALGO, nullptr);
     if (md == nullptr)
     {
-        std::cerr << "Unsupported algorithm: " << RSA_HASH_ALGO << std::endl;
         destroy();
+        LOG_ERROR << "Unsupported algorithm: " << RSA_HASH_ALGO;
         return -1;
     }
     EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
     if (mdctx == nullptr)
     {
-        std::cerr << "Message Digestion context initialization failed" << std::endl;
         destroy();
+        LOG_ERROR << "Message Digestion context initialization failed";
         return -1;
     }
     EVP_DigestInit_ex2(mdctx, md, nullptr);
@@ -310,52 +314,51 @@ size_t AuthCrypto::sign(const char *msg, unsigned char *&sig, const char *passwo
         if (!loadPrivateKey(password))
             return -1;
     }
-    this->ctx = nullptr;
     EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
     if (md_ctx == nullptr)
     {
         unloadPrivateKey();
-        std::cerr << "Message Digest init failed." << std::endl;
+        LOG_ERROR << "Message Digest init failed.";
         return -1;
     }
     OSSL_LIB_CTX *lib_ctx = OSSL_LIB_CTX_new();
     if (EVP_DigestSignInit_ex(md_ctx, nullptr, RSA_HASH_ALGO, lib_ctx, nullptr, private_key, nullptr) < 1)
     {
         unloadPrivateKey();
-        std::cerr << "Message Digest Signing init failed." << std::endl;
+        LOG_ERROR << "Message Digest Signing init failed.";
         return -1;
     }
     if (EVP_DigestUpdate(md_ctx, msg, strlen(msg)) < 1)
     {
         unloadPrivateKey();
-        std::cerr << "Message Digest Signing Update failed." << std::endl;
+        LOG_ERROR << "Message Digest Signing Update failed.";
         return -1;
     }
     size_t sig_len;
     if (EVP_DigestSignFinal(md_ctx, nullptr, &sig_len) < 1)
     {
         unloadPrivateKey();
-        std::cerr << "Signing Length Computation failed." << std::endl;
+        LOG_ERROR << "Signing Length Computation failed.";
         return -1;
     }
     if (sig_len <= 0)
     {
         unloadPrivateKey();
-        std::cerr << "Signing Length invalid: " << sig_len << std::endl;
+        LOG_ERROR << "Signing Length invalid: " << sig_len;
         return -1;
     }
     sig = (unsigned char *)OPENSSL_malloc(sig_len);
     if (sig == nullptr)
     {
         unloadPrivateKey();
-        std::cerr << "Signing allocation failed." << std::endl;
+        LOG_ERROR << "Signing allocation failed.";
         return -1;
     }
     if (EVP_DigestSignFinal(md_ctx, sig, &sig_len) < 1)
     {
         unloadPrivateKey();
-        std::cerr << "Signing failed." << std::endl;
         OPENSSL_free(sig);
+        LOG_ERROR << "Signing failed.";
         return -1;
     }
     EVP_MD_CTX_free(md_ctx);
@@ -373,7 +376,7 @@ bool AuthCrypto::verify(const char *msg, unsigned char *sig, size_t sig_len)
     if (md_ctx == nullptr)
     {
         unloadPublicKey();
-        std::cerr << "Message Digest init failed." << std::endl;
+        LOG_ERROR << "Message Digest init failed.";
         return false;
     }
 
@@ -381,21 +384,21 @@ bool AuthCrypto::verify(const char *msg, unsigned char *sig, size_t sig_len)
     if (EVP_DigestVerifyInit_ex(md_ctx, nullptr, RSA_HASH_ALGO, lib_ctx, nullptr, public_key, nullptr) < 1)
     {
         unloadPublicKey();
-        std::cerr << "Message Digest Signing init failed." << std::endl;
+        LOG_ERROR << "Message Digest Signing init failed.";
         return false;
     }
 
     if (EVP_DigestVerifyUpdate(md_ctx, msg, strlen(msg)) < 1)
     {
         unloadPublicKey();
-        std::cerr << "Message Digest Signing Update failed." << std::endl;
+        LOG_ERROR << "Message Digest Signing Update failed.";
         return false;
     }
 
     if (EVP_DigestVerifyFinal(md_ctx, sig, sig_len) < 1)
     {
         unloadPublicKey();
-        std::cerr << "Verifying failed." << std::endl;
+        LOG_ERROR << "Verifying failed.";
         return false;
     }
     EVP_MD_CTX_free(md_ctx);
