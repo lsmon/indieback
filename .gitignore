@@ -53,5 +53,7 @@
 /scheduler
 /data-model
 /logpp-*.log
+/logpp-*.zip
+/logpp-*.tar.gz
 /resources/password.txt
 /resources/*
